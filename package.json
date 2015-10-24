@@ -1,0 +1,23 @@
+{
+  "name": "mushroomcup",
+  "version": "0.1.0",
+  "description": "tournament system",
+  "main": "js/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brodo/MushroomCup.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/brodo/MushroomCup/issues"
+  },
+  "homepage": "https://github.com/brodo/MushroomCup#readme",
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-elm": "^1.3.0"
+  }
+}
