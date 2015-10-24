@@ -1,29 +1,35 @@
-module BaasBox (signUp, signUpResponses, User) where
+module BaasBox (signUp) where
+
+import Json.Encode exposing (..)
+import Task
+
+-- Mailboxes
+
+outbox : Signal.Mailbox Json.Encode.Value
+outbox = Signal.mailbox Json.Encode.null
+
+inbox : Signal Json.Encode.Value
+inbox = baasBoxResonses
 
 
-type alias UserRequest = {
-  name : String
-  ,password : String
-}
+-- Ports
 
-type alias User = {
-  name : String
-}
+port baasBoxCommands : Signal Json.Encode.Value
+port baasBoxCommands =
+  outbox.signal
 
-port signUpResponsePort : Signal User
+port baasBoxResonses : Signal Json.Encode.Value
 
-port signUpRequestPort : Signal UserRequest
-port signUpRequestPort = signUpRequestMailbox.signal
+-- Functions
 
-signUpResponses : Signal User
-signUpResponses = signUpResponsePort
-
-signUpRequestMailbox : Signal.Mailbox UserRequest
-signUpRequestMailbox = Signal.mailbox {name = "", password = ""}
-
-signUp : UserRequest -> ()
-signUp req =
+signUp : String -> String -> Task.Task Json.Encode.Value ()
+signUp username password =
   let
-    _ = Signal.send signUpRequestMailbox.address req
+    command =
+      object
+      [ ("command", string "signIn")
+      , ("username", string username)
+      , ("password", string password)
+      ]
   in
-    ()
+    Signal.send outbox.address command
