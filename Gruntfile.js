@@ -5,7 +5,7 @@ grunt.initConfig({
    elm: {
      compile: {
        files: {
-         "js/elm.js": ["elm/Main.elm"]
+         "js/elm.js": ["elm/Main.elm", "elm/BaasBox.elm"]
        }
      }
    },

@@ -1,6 +1,6 @@
-module MushroomCup where
-
+module Main where
+import BaasBox
 import Html exposing (..)
 
-main : Html.Html
-main = text "test"
+main : Signal Html.Html
+main = Signal.map (text << .name)  BaasBox.signUpResponses

@@ -92,6 +92,63 @@ Elm.Array.make = function (_elm) {
                        ,foldr: foldr};
    return _elm.Array.values;
 };
+Elm.BaasBox = Elm.BaasBox || {};
+Elm.BaasBox.make = function (_elm) {
+   "use strict";
+   _elm.BaasBox = _elm.BaasBox || {};
+   if (_elm.BaasBox.values)
+   return _elm.BaasBox.values;
+   var _op = {},
+   _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   $moduleName = "BaasBox",
+   $Basics = Elm.Basics.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var signUpRequestMailbox = $Signal.mailbox({_: {}
+                                              ,name: ""
+                                              ,password: ""});
+   var signUp = function (req) {
+      return function () {
+         var _ = A2($Signal.send,
+         signUpRequestMailbox.address,
+         req);
+         return {ctor: "_Tuple0"};
+      }();
+   };
+   var signUpRequestPort = Elm.Native.Port.make(_elm).outboundSignal("signUpRequestPort",
+   function (v) {
+      return {name: v.name
+             ,password: v.password};
+   },
+   signUpRequestMailbox.signal);
+   var signUpResponsePort = Elm.Native.Port.make(_elm).inboundSignal("signUpResponsePort",
+   "BaasBox.User",
+   function (v) {
+      return typeof v === "object" && "name" in v ? {_: {}
+                                                    ,name: typeof v.name === "string" || typeof v.name === "object" && v.name instanceof String ? v.name : _U.badPort("a string",
+                                                    v.name)} : _U.badPort("an object with fields `name`",
+      v);
+   });
+   var signUpResponses = signUpResponsePort;
+   var User = function (a) {
+      return {_: {},name: a};
+   };
+   var UserRequest = F2(function (a,
+   b) {
+      return {_: {}
+             ,name: a
+             ,password: b};
+   });
+   _elm.BaasBox.values = {_op: _op
+                         ,signUp: signUp
+                         ,signUpResponses: signUpResponses
+                         ,User: User};
+   return _elm.BaasBox.values;
+};
 Elm.Basics = Elm.Basics || {};
 Elm.Basics.make = function (_elm) {
    "use strict";
@@ -3418,6 +3475,35 @@ Elm.List.make = function (_elm) {
                       ,sortWith: sortWith};
    return _elm.List.values;
 };
+Elm.Main = Elm.Main || {};
+Elm.Main.make = function (_elm) {
+   "use strict";
+   _elm.Main = _elm.Main || {};
+   if (_elm.Main.values)
+   return _elm.Main.values;
+   var _op = {},
+   _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   $moduleName = "Main",
+   $BaasBox = Elm.BaasBox.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var main = A2($Signal.map,
+   function ($) {
+      return $Html.text(function (_) {
+         return _.name;
+      }($));
+   },
+   $BaasBox.signUpResponses);
+   _elm.Main.values = {_op: _op
+                      ,main: main};
+   return _elm.Main.values;
+};
 Elm.Maybe = Elm.Maybe || {};
 Elm.Maybe.make = function (_elm) {
    "use strict";
@@ -3490,28 +3576,6 @@ Elm.Maybe.make = function (_elm) {
                        ,Just: Just
                        ,Nothing: Nothing};
    return _elm.Maybe.values;
-};
-Elm.MushroomCup = Elm.MushroomCup || {};
-Elm.MushroomCup.make = function (_elm) {
-   "use strict";
-   _elm.MushroomCup = _elm.MushroomCup || {};
-   if (_elm.MushroomCup.values)
-   return _elm.MushroomCup.values;
-   var _op = {},
-   _N = Elm.Native,
-   _U = _N.Utils.make(_elm),
-   _L = _N.List.make(_elm),
-   $moduleName = "MushroomCup",
-   $Basics = Elm.Basics.make(_elm),
-   $Html = Elm.Html.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
-   var main = $Html.text("test");
-   _elm.MushroomCup.values = {_op: _op
-                             ,main: main};
-   return _elm.MushroomCup.values;
 };
 Elm.Native.Array = {};
 Elm.Native.Array.make = function(localRuntime) {
