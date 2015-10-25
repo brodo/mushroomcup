@@ -3,6 +3,26 @@ module BaasBox (signUp) where
 import Json.Encode exposing (..)
 import Task
 
+
+-- Types
+
+type BaasBoxResponse = Success OkResult | Error ErrorResult
+
+type alias OkResult =
+  { result : String
+  , http_code : Int
+  , data : Json.Encode.Value
+  }
+
+type alias ErrorResult =
+  { bb_code : Int
+  , message : String
+  , resource : String
+  , method : String
+  , request_header : Json.Encode.Value
+  , api_version : String
+  }
+
 -- Mailboxes
 
 outbox : Signal.Mailbox Json.Encode.Value
