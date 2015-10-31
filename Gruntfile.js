@@ -5,13 +5,18 @@ grunt.initConfig({
    elm: {
      compile: {
        files: {
-         "js/elm.js": ["elm/Main.elm", "elm/BaasBox.elm"]
+         "js/elm.js": [
+           "elm/MushroomCup.elm",
+           "elm/PlayerList.elm",
+           "elm/Games.elm"]
        }
      }
    },
    watch: {
      elm: {
-       files: ["elm/Main.elm"],
+       files: ["elm/MushroomCup.elm",
+        "elm/PlayerList.elm",
+        "elm/Games.elm"],
        tasks: ["elm"]
      }
    },

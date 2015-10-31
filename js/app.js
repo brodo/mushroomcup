@@ -1,7 +1,11 @@
 var elmDiv = document.getElementById('elm-main');
-var nullUser = {name: "", isLoggedIn: false};
-var elmApp = Elm.embed(Elm.Main, elmDiv, {"signUpResponsePort":nullUser});
-elmApp.ports.signUpResponsePort.send({name: "test", isLoggedIn: false});
-elmApp.ports.signUpRequestPort.subscribe(function(request){
-    console.log(request);
+var elmApp = Elm.embed(Elm.MushroomCup, elmDiv);
+elmApp.ports.focus.subscribe(function(selector){
+  setTimeout(function() {
+        console.log(selector);
+        var nodes = document.querySelectorAll(selector);
+        if (nodes.length === 1 && document.activeElement !== nodes[0]) {
+            nodes[0].focus()
+        }
+    }, 50);
 });
