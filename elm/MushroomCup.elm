@@ -1,6 +1,5 @@
 module MushroomCup where
-import Globals
-
+import Globals exposing (GlobalAction(AddPlayerGlobal, NoOpGlobal))
 import PlayerList
 import Games
 
@@ -16,7 +15,6 @@ import Html.Events exposing (..)
 type alias Model =
   { playerList : PlayerList.Model
   , games : Games.Model
-  , globals : Globals.GlobalModel
   }
 
 
@@ -24,7 +22,6 @@ initialModel : Model
 initialModel =
   { playerList = PlayerList.initialModel
   , games = Games.initialModel
-  , globals = Globals.initialGlobalModel
   }
 
 
@@ -37,14 +34,14 @@ model =
 
 
 type Action =
-  Global Globals.Action
+  NoOp
   | PlayerList PlayerList.Action
   | Games Games.Action
+  | Global GlobalAction
 
 actions : Signal.Mailbox Action
 actions =
-  Signal.mailbox Globals.Action.NoOp
-
+  Signal.mailbox NoOp
 
 -- Update
 
@@ -52,19 +49,24 @@ actions =
 update : Action -> Model -> Model
 update action model =
   case action of
-    Globals.Action.NoOp ->
+    NoOp ->
       model
     PlayerList act ->
       let
-        (pl, global) = PlayerList.update act model.playerList model.globals
+        (players, globalAction) =
+           PlayerList.update act model.playerList
+        newModel = update (Global globalAction) model
       in
-        { model |
-          playerList <- pl
-        , globals <- global
+        { newModel |
+          playerList <- players
         }
     Games act ->
       { model |
-        games <- Games.update act model.games model.globals
+        games <- Games.update act model.games
+      }
+    Global act ->
+      { model |
+        games <- Games.update (Games.Global act) model.games
       }
 
 
@@ -78,9 +80,9 @@ view address model =
   [
     header
   ,  div [class "col s4"]
-    [ (PlayerList.view (Signal.forwardTo address PlayerList) model.playerList model.globals) ]
+    [ (PlayerList.view (Signal.forwardTo address PlayerList) model.playerList) ]
   ,  div [class "col s8"]
-    [(Games.view (Signal.forwardTo address Games) model.games model.globals)]
+    [(Games.view (Signal.forwardTo address Games) model.games)]
   ]
 
 

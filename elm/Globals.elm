@@ -1,12 +1,8 @@
-module Globals (GlobalModel, Action (NoOp, AddPlayer), initialGlobalModel) where
+module Globals ( GlobalAction (NoOpGlobal, AddPlayerGlobal)) where
 
-type Action =
-  NoOp
-  | AddPlayer String
+-- Action
 
-type alias GlobalModel =
-  { players : List String}
 
-initialGlobalModel : GlobalModel
-initialGlobalModel =
-  { players = []}
+type GlobalAction =
+  NoOpGlobal
+  | AddPlayerGlobal String
