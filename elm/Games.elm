@@ -1,5 +1,6 @@
 module Games (Model, Action(Global), initialModel, update, view) where
-import Globals exposing (GlobalAction (AddPlayerGlobal))
+import Globals exposing
+  (GlobalAction (AddPlayerGlobal, RemovePlayerGlobal, NoOpGlobal))
 import Html exposing (..)
 
 
@@ -47,8 +48,13 @@ update action model =
           { model |
             players <- player :: model.players
           }
-        _ ->
+        RemovePlayerGlobal player ->
+          { model |
+             players <- List.filter (\str -> str /= player) model.players
+          }
+        NoOpGlobal ->
           model
+
 
 -- View
 

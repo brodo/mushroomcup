@@ -1,7 +1,8 @@
 module PlayerList
   (Model, Action, initialModel, update, view,
    focusFilter, focusSelector) where
-import Globals exposing (GlobalAction(AddPlayerGlobal, NoOpGlobal))
+import Globals exposing
+  (GlobalAction(AddPlayerGlobal, NoOpGlobal, RemovePlayerGlobal))
 import String
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -34,6 +35,7 @@ type Action =
   NoOp
   | AddPlayer
   | SetNewPlayerName String
+  | RemovePlayer String
 
 
 --- Update
@@ -52,10 +54,16 @@ update action model =
           , isValidPlayerName <- False
           , showErrorInTextField <- False
           }
-        , AddPlayerGlobal model.newPlayer
+          , AddPlayerGlobal model.newPlayer
         )
       else
         (model, NoOpGlobal)
+    RemovePlayer player ->
+      ( { model |
+         players <- List.filter (\str -> str /= player) model.players
+        }
+        , RemovePlayerGlobal player
+      )
     SetNewPlayerName name ->
       let
         trimmedName = String.trim name
@@ -67,7 +75,7 @@ update action model =
           , isValidPlayerName <- isValid
           , showErrorInTextField <- True
           }
-        , NoOpGlobal
+          , NoOpGlobal
         )
 
 
@@ -77,7 +85,16 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   let
     listItem str =
-      li [class "collection-item"] [text str]
+      li [class "collection-item"]
+        [div []
+          [text str
+          ,a [class "secondary-content"
+              ,style [("cursor", "pointer")]
+              ,onClick address (RemovePlayer str)
+              ]
+            [i [class "material-icons"] [text "delete"]]
+          ]
+        ]
     listHeader =
       li [class "collection-header"] [h5 [] [text "Players"]]
     list =
@@ -85,7 +102,7 @@ view address model =
     listWithHeaderAndFooter =
       List.append (listHeader :: list) [(addPlayerView address model)]
   in
-    ul [ class "collection with-header"] <| listWithHeaderAndFooter
+    ul [class "collection with-header"] <| listWithHeaderAndFooter
 
 
 addPlayerView : Signal.Address Action -> Model -> Html

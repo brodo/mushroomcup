@@ -1818,27 +1818,54 @@ Elm.Games.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
-   var view = F3(function (address,
-   model,
-   globals) {
-      return $Html.text($Basics.toString(globals));
+   var view = F2(function (address,
+   model) {
+      return $Html.text($Basics.toString(model.players));
    });
-   var update = F3(function (action,
-   model,
-   globals) {
+   var update = F2(function (action,
+   model) {
       return function () {
          switch (action.ctor)
-         {case "NoOp": return model;}
+         {case "Global":
+            return function () {
+                 switch (action._0.ctor)
+                 {case "AddPlayerGlobal":
+                    return _U.replace([["players"
+                                       ,A2($List._op["::"],
+                                       action._0._0,
+                                       model.players)]],
+                      model);
+                    case "NoOpGlobal": return model;
+                    case "RemovePlayerGlobal":
+                    return _U.replace([["players"
+                                       ,A2($List.filter,
+                                       function (str) {
+                                          return !_U.eq(str,
+                                          action._0._0);
+                                       },
+                                       model.players)]],
+                      model);}
+                 _U.badCase($moduleName,
+                 "between lines 46 and 56");
+              }();
+            case "NoOp": return model;}
          _U.badCase($moduleName,
-         "between lines 38 and 40");
+         "between lines 42 and 56");
       }();
    });
+   var Global = function (a) {
+      return {ctor: "Global"
+             ,_0: a};
+   };
    var NoOp = {ctor: "NoOp"};
    var initialModel = {_: {}
-                      ,games: _L.fromArray([])};
-   var Model = function (a) {
-      return {_: {},games: a};
-   };
+                      ,games: _L.fromArray([])
+                      ,players: _L.fromArray([])};
+   var Model = F2(function (a,b) {
+      return {_: {}
+             ,games: a
+             ,players: b};
+   });
    var Game = F3(function (a,b,c) {
       return {_: {}
              ,isFinished: b
@@ -1849,7 +1876,8 @@ Elm.Games.make = function (_elm) {
                        ,initialModel: initialModel
                        ,update: update
                        ,view: view
-                       ,Model: Model};
+                       ,Model: Model
+                       ,Global: Global};
    return _elm.Games.values;
 };
 Elm.Globals = Elm.Globals || {};
@@ -1868,21 +1896,19 @@ Elm.Globals.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
-   var initialGlobalModel = {_: {}
-                            ,players: _L.fromArray([])};
-   var GlobalModel = function (a) {
-      return {_: {},players: a};
-   };
-   var AddPlayer = function (a) {
-      return {ctor: "AddPlayer"
+   var RemovePlayerGlobal = function (a) {
+      return {ctor: "RemovePlayerGlobal"
              ,_0: a};
    };
-   var NoOp = {ctor: "NoOp"};
+   var AddPlayerGlobal = function (a) {
+      return {ctor: "AddPlayerGlobal"
+             ,_0: a};
+   };
+   var NoOpGlobal = {ctor: "NoOpGlobal"};
    _elm.Globals.values = {_op: _op
-                         ,initialGlobalModel: initialGlobalModel
-                         ,GlobalModel: GlobalModel
-                         ,NoOp: NoOp
-                         ,AddPlayer: AddPlayer};
+                         ,NoOpGlobal: NoOpGlobal
+                         ,AddPlayerGlobal: AddPlayerGlobal
+                         ,RemovePlayerGlobal: RemovePlayerGlobal};
    return _elm.Globals.values;
 };
 Elm.Graphics = Elm.Graphics || {};
@@ -4340,33 +4366,43 @@ Elm.MushroomCup.make = function (_elm) {
    _L.fromArray([A2($Html.h1,
    _L.fromArray([]),
    _L.fromArray([$Html.text("Mushroom Cup")]))]))]));
+   var Global = function (a) {
+      return {ctor: "Global"
+             ,_0: a};
+   };
    var update = F2(function (action,
    model) {
       return function () {
          switch (action.ctor)
          {case "Games":
             return _U.replace([["games"
-                               ,A3($Games.update,
+                               ,A2($Games.update,
                                action._0,
-                               model.games,
-                               model.globals)]],
+                               model.games)]],
+              model);
+            case "Global":
+            return _U.replace([["games"
+                               ,A2($Games.update,
+                               $Games.Global(action._0),
+                               model.games)]],
               model);
             case "NoOp": return model;
             case "PlayerList":
             return function () {
-                 var $ = A3($PlayerList.update,
+                 var $ = A2($PlayerList.update,
                  action._0,
-                 model.playerList,
-                 model.globals),
-                 pl = $._0,
-                 global = $._1;
-                 return _U.replace([["playerList"
-                                    ,pl]
-                                   ,["globals",global]],
+                 model.playerList),
+                 players = $._0,
+                 globalAction = $._1;
+                 var newModel = A2(update,
+                 Global(globalAction),
                  model);
+                 return _U.replace([["playerList"
+                                    ,players]],
+                 newModel);
               }();}
          _U.badCase($moduleName,
-         "between lines 55 and 69");
+         "between lines 51 and 70");
       }();
    });
    var Games = function (a) {
@@ -4383,22 +4419,19 @@ Elm.MushroomCup.make = function (_elm) {
       _L.fromArray([header
                    ,A2($Html.div,
                    _L.fromArray([$Html$Attributes.$class("col s4")]),
-                   _L.fromArray([A3($PlayerList.view,
+                   _L.fromArray([A2($PlayerList.view,
                    A2($Signal.forwardTo,
                    address,
                    PlayerList),
-                   model.playerList,
-                   model.globals)]))
+                   model.playerList)]))
                    ,A2($Html.div,
                    _L.fromArray([$Html$Attributes.$class("col s8")]),
-                   _L.fromArray([A3($Games.view,
+                   _L.fromArray([A2($Games.view,
                    A2($Signal.forwardTo,
                    address,
                    Games),
-                   model.games,
-                   model.globals)]))]));
+                   model.games)]))]));
    });
-   var AddPlayer = {ctor: "AddPlayer"};
    var NoOp = {ctor: "NoOp"};
    var actions = $Signal.mailbox(NoOp);
    var focus = Elm.Native.Port.make(_elm).outboundSignal("focus",
@@ -4413,7 +4446,7 @@ Elm.MushroomCup.make = function (_elm) {
                case "PlayerList":
                return $PlayerList.focusFilter(action._0);}
             _U.badCase($moduleName,
-            "between lines 111 and 116");
+            "between lines 112 and 117");
          }();
       };
       var filteredActions = A3($Signal.filter,
@@ -4427,7 +4460,7 @@ Elm.MushroomCup.make = function (_elm) {
                case "PlayerList":
                return $PlayerList.focusSelector(action._0);}
             _U.badCase($moduleName,
-            "between lines 105 and 110");
+            "between lines 106 and 111");
          }();
       };
       return A2($Signal.map,
@@ -4436,7 +4469,6 @@ Elm.MushroomCup.make = function (_elm) {
    }());
    var initialModel = {_: {}
                       ,games: $Games.initialModel
-                      ,globals: $Globals.initialGlobalModel
                       ,playerList: $PlayerList.initialModel};
    var model = A3($Signal.foldp,
    update,
@@ -4445,12 +4477,9 @@ Elm.MushroomCup.make = function (_elm) {
    var main = A2($Signal.map,
    view(actions.address),
    model);
-   var Model = F3(function (a,
-   b,
-   c) {
+   var Model = F2(function (a,b) {
       return {_: {}
              ,games: b
-             ,globals: c
              ,playerList: a};
    });
    _elm.MushroomCup.values = {_op: _op
@@ -4458,9 +4487,9 @@ Elm.MushroomCup.make = function (_elm) {
                              ,initialModel: initialModel
                              ,model: model
                              ,NoOp: NoOp
-                             ,AddPlayer: AddPlayer
                              ,PlayerList: PlayerList
                              ,Games: Games
+                             ,Global: Global
                              ,actions: actions
                              ,update: update
                              ,view: view
@@ -12200,68 +12229,80 @@ Elm.PlayerList.make = function (_elm) {
    var focusFilter = function (action) {
       return function () {
          switch (action.ctor)
-         {case "GlobalAction.AddPlayer":
-            return true;}
+         {case "AddPlayer": return true;}
          return false;
       }();
    };
-   var update = F3(function (action,
-   model,
-   globalModel) {
+   var update = F2(function (action,
+   model) {
       return function () {
          switch (action.ctor)
-         {case "GlobalAction.AddPlayer":
+         {case "AddPlayer":
             return model.isValidPlayerName ? {ctor: "_Tuple2"
                                              ,_0: _U.replace([["newPlayer"
                                                               ,""]
+                                                             ,["players"
+                                                              ,A2($List._op["::"],
+                                                              model.newPlayer,
+                                                              model.players)]
                                                              ,["isValidPlayerName"
                                                               ,false]
                                                              ,["showErrorInTextField"
                                                               ,false]],
                                              model)
-                                             ,_1: _U.replace([["players"
-                                                              ,A2($List._op["::"],
-                                                              model.newPlayer,
-                                                              globalModel.players)]],
-                                             globalModel)} : {ctor: "_Tuple2"
-                                                             ,_0: model
-                                                             ,_1: globalModel};
-            case "GlobalAction.NoOp":
+                                             ,_1: $Globals.AddPlayerGlobal(model.newPlayer)} : {ctor: "_Tuple2"
+                                                                                               ,_0: model
+                                                                                               ,_1: $Globals.NoOpGlobal};
+            case "NoOp":
             return {ctor: "_Tuple2"
                    ,_0: model
-                   ,_1: globalModel};
+                   ,_1: $Globals.NoOpGlobal};
+            case "RemovePlayer":
+            return {ctor: "_Tuple2"
+                   ,_0: _U.replace([["players"
+                                    ,A2($List.filter,
+                                    function (str) {
+                                       return !_U.eq(str,action._0);
+                                    },
+                                    model.players)]],
+                   model)
+                   ,_1: $Globals.RemovePlayerGlobal(action._0)};
             case "SetNewPlayerName":
             return function () {
                  var trimmedName = $String.trim(action._0);
                  var isValid = !_U.eq(trimmedName,
                  "") && $Basics.not(A2($List.member,
                  trimmedName,
-                 globalModel.players));
+                 model.players));
                  return {ctor: "_Tuple2"
                         ,_0: _U.replace([["newPlayer"
                                          ,action._0]
                                         ,["isValidPlayerName",isValid]
                                         ,["showErrorInTextField",true]],
                         model)
-                        ,_1: globalModel};
+                        ,_1: $Globals.NoOpGlobal};
               }();}
          _U.badCase($moduleName,
-         "between lines 41 and 69");
+         "between lines 46 and 79");
       }();
    });
+   var RemovePlayer = function (a) {
+      return {ctor: "RemovePlayer"
+             ,_0: a};
+   };
    var SetNewPlayerName = function (a) {
       return {ctor: "SetNewPlayerName"
              ,_0: a};
    };
-   var GlobalAction.AddPlayer = {ctor: "GlobalAction.AddPlayer"};
-   var GlobalAction.NoOp = {ctor: "GlobalAction.NoOp"};
+   var AddPlayer = {ctor: "AddPlayer"};
+   var NoOp = {ctor: "NoOp"};
    var addPlayerView = F2(function (address,
    model) {
       return function () {
          var textFieldClass = model.showErrorInTextField && $Basics.not(model.isValidPlayerName) ? "invalid" : "valid";
          var addPlayer = function (code) {
             return _U.eq(code,
-            13) ? GlobalAction.AddPlayer : GlobalAction.NoOp;
+            13) ? AddPlayer : NoOp;
          };
          var setNewPlayerName = function (str) {
             return A2($Signal.message,
@@ -12293,9 +12334,8 @@ Elm.PlayerList.make = function (_elm) {
                       _L.fromArray([$Html.text("Player Name")]))]))]));
       }();
    });
-   var view = F3(function (address,
-   model,
-   globalModel) {
+   var view = F2(function (address,
+   model) {
       return function () {
          var listHeader = A2($Html.li,
          _L.fromArray([$Html$Attributes.$class("collection-header")]),
@@ -12305,11 +12345,24 @@ Elm.PlayerList.make = function (_elm) {
          var listItem = function (str) {
             return A2($Html.li,
             _L.fromArray([$Html$Attributes.$class("collection-item")]),
-            _L.fromArray([$Html.text(str)]));
+            _L.fromArray([A2($Html.div,
+            _L.fromArray([]),
+            _L.fromArray([$Html.text(str)
+                         ,A2($Html.a,
+                         _L.fromArray([$Html$Attributes.$class("secondary-content")
+                                      ,$Html$Attributes.style(_L.fromArray([{ctor: "_Tuple2"
+                                                                            ,_0: "cursor"
+                                                                            ,_1: "pointer"}]))
+                                      ,A2($Html$Events.onClick,
+                                      address,
+                                      RemovePlayer(str))]),
+                         _L.fromArray([A2($Html.i,
+                         _L.fromArray([$Html$Attributes.$class("material-icons")]),
+                         _L.fromArray([$Html.text("delete")]))]))]))]));
          };
          var list = A2($List.map,
          listItem,
-         globalModel.players);
+         model.players);
          var listWithHeaderAndFooter = A2($List.append,
          A2($List._op["::"],
          listHeader,
@@ -12323,14 +12376,17 @@ Elm.PlayerList.make = function (_elm) {
    var initialModel = {_: {}
                       ,isValidPlayerName: false
                       ,newPlayer: ""
+                      ,players: _L.fromArray([])
                       ,showErrorInTextField: false};
-   var Model = F3(function (a,
+   var Model = F4(function (a,
    b,
-   c) {
+   c,
+   d) {
       return {_: {}
-             ,isValidPlayerName: b
+             ,isValidPlayerName: c
              ,newPlayer: a
-             ,showErrorInTextField: c};
+             ,players: b
+             ,showErrorInTextField: d};
    });
    _elm.PlayerList.values = {_op: _op
                             ,initialModel: initialModel
