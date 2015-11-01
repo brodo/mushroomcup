@@ -7,6 +7,7 @@ grunt.initConfig({
        files: {
          "js/elm.js": [
            "elm/MushroomCup.elm",
+           "elm/Globals.elm",
            "elm/PlayerList.elm",
            "elm/Games.elm"]
        }
@@ -15,6 +16,7 @@ grunt.initConfig({
    watch: {
      elm: {
        files: ["elm/MushroomCup.elm",
+        "elm/Globals.elm", 
         "elm/PlayerList.elm",
         "elm/Games.elm"],
        tasks: ["elm"]

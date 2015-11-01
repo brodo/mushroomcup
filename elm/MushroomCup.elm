@@ -1,6 +1,9 @@
 module MushroomCup where
+import Globals
+
 import PlayerList
 import Games
+
 
 import String
 import Html exposing (..)
@@ -13,6 +16,7 @@ import Html.Events exposing (..)
 type alias Model =
   { playerList : PlayerList.Model
   , games : Games.Model
+  , globals : Globals.GlobalModel
   }
 
 
@@ -20,7 +24,9 @@ initialModel : Model
 initialModel =
   { playerList = PlayerList.initialModel
   , games = Games.initialModel
+  , globals = Globals.initialGlobalModel
   }
+
 
 model : Signal Model
 model =
@@ -30,14 +36,14 @@ model =
 -- Actions
 
 
-type Action
-  = NoOp
+type Action =
+  Global Globals.Action
   | PlayerList PlayerList.Action
   | Games Games.Action
 
 actions : Signal.Mailbox Action
 actions =
-  Signal.mailbox NoOp
+  Signal.mailbox Globals.Action.NoOp
 
 
 -- Update
@@ -46,24 +52,21 @@ actions =
 update : Action -> Model -> Model
 update action model =
   case action of
-    NoOp ->
+    Globals.Action.NoOp ->
       model
     PlayerList act ->
       let
-        newGames =
-          if act == PlayerList.Action.AddPlayer then
-            Games.update Games.Action.SetPlayerList model.playerList.players
-          else
-            model.games
+        (pl, global) = PlayerList.update act model.playerList model.globals
       in
         { model |
-          playerList <- PlayerList.update act model.playerList
-        , games <- newGames
+          playerList <- pl
+        , globals <- global
         }
     Games act ->
       { model |
-        games <- Games.update act model.games
+        games <- Games.update act model.games model.globals
       }
+
 
 
 -- View
@@ -75,9 +78,9 @@ view address model =
   [
     header
   ,  div [class "col s4"]
-    [ (PlayerList.view (Signal.forwardTo address PlayerList) model.playerList) ]
+    [ (PlayerList.view (Signal.forwardTo address PlayerList) model.playerList model.globals) ]
   ,  div [class "col s8"]
-    [(Games.view (Signal.forwardTo address Games) model.games)]
+    [(Games.view (Signal.forwardTo address Games) model.games model.globals)]
   ]
 
 

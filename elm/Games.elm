@@ -1,4 +1,5 @@
 module Games (Model, Action, initialModel, update, view) where
+import Globals exposing (GlobalModel)
 import Html exposing (..)
 
 
@@ -6,20 +7,20 @@ import Html exposing (..)
 
 
 type alias Game =
-  { players : List String
-  , places : List (Int, String)
+  { places : List (Int, String)
+  , isFinished : Bool
+  , isRunning : Bool
   }
+
 
 type alias Model =
   { games : List Game
-  ,  players : List String
   }
 
 
 initialModel : Model
 initialModel =
   { games = []
-  , players = []
   }
 
 
@@ -28,25 +29,19 @@ initialModel =
 
 type Action =
   NoOp
-  | SetPlayerList (List String)
 
 -- Update
 
 
-update : Action -> Model -> Model
-update action model =
+update : Action -> Model -> GlobalModel -> Model
+update action model globals =
   case action of
     NoOp ->
       model
-    SetPlayerList list ->
-      { model |
-        players <- list
-      }
-
 
 -- View
 
 
-view : Signal.Address Action -> Model -> Html
-view address model =
-  text <| toString model
+view : Signal.Address Action -> Model -> GlobalModel -> Html
+view address model globals =
+  text <| toString globals

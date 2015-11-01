@@ -1,5 +1,7 @@
 module PlayerList
-  (Model, Action (AddPlayer), initialModel, update, view, focusFilter, focusSelector) where
+  (Model, Action, initialModel, update, view,
+   focusFilter, focusSelector) where
+import Globals
 import String
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -10,8 +12,7 @@ import Html.Events exposing (..)
 
 
 type alias Model =
-  { players : List String
-  , newPlayer : String
+  { newPlayer : String
   , isValidPlayerName : Bool
   , showErrorInTextField : Bool
   }
@@ -19,8 +20,7 @@ type alias Model =
 
 initialModel : Model
 initialModel =
-  { players = []
-  , newPlayer = ""
+  { newPlayer = ""
   , isValidPlayerName = False
   , showErrorInTextField = False }
 
@@ -28,52 +28,59 @@ initialModel =
 -- Actions
 
 
-type Action = NoOp
-  | AddPlayer
+type Action =
+  Global Globals.Action
   | SetNewPlayerName String
 
 
 --- Update
 
-update : Action -> Model -> Model
-update action model =
+update : Action -> Model -> GlobalModel -> (Model, GlobalModel)
+update action model globalModel =
   case action of
-    NoOp ->
-      model
-    AddPlayer ->
-      if model.isValidPlayerName then
-        { model |
-          players <- model.newPlayer :: model.players
-        , newPlayer <- ""
-        , isValidPlayerName <- False
-        , showErrorInTextField <- False
-        }
-      else
-        model
+    Global act ->
+      case act of
+        Globals.Action.NoOp ->
+          (model, globalModel)
+        Globals.Action.AddPlayer ->
+          if model.isValidPlayerName then
+            ( { model |
+                newPlayer <- ""
+              , isValidPlayerName <- False
+              , showErrorInTextField <- False
+              }
+            , { globalModel |
+                players <- model.newPlayer :: globalModel.players
+              }
+            )
+          else
+            (model, globalModel)
     SetNewPlayerName name ->
       let
         trimmedName = String.trim name
         isValid =
-          trimmedName /= "" && not (List.member trimmedName model.players)
+          trimmedName /= "" && not (List.member trimmedName globalModel.players)
       in
-        { model |
-          newPlayer <- name
-        , isValidPlayerName <- isValid
-        , showErrorInTextField <- True
-        }
+        ( { model |
+            newPlayer <- name
+          , isValidPlayerName <- isValid
+          , showErrorInTextField <- True
+          }
+        , globalModel
+        )
 
 
 -- View
 
-view : Signal.Address Action -> Model -> Html
-view address model =
+view : Signal.Address Action -> Model -> GlobalModel -> Html
+view address model globalModel =
   let
     listItem str =
       li [class "collection-item"] [text str]
     listHeader =
       li [class "collection-header"] [h5 [] [text "Players"]]
     list =
-      List.map listItem model.players
+      List.map listItem globalModel.players
     listWithHeaderAndFooter =
       List.append (listHeader :: list) [(addPlayerView address model)]
   in
@@ -86,7 +93,7 @@ addPlayerView address model =
     setNewPlayerName str =
       Signal.message address (SetNewPlayerName str)
     addPlayer code =
-      (if code == 13 then AddPlayer else NoOp)
+      (if code == 13 then Global.Action.AddPlayer else Global.Action.NoOp)
     textFieldClass =
       if model.showErrorInTextField && not model.isValidPlayerName then
         "invalid"
@@ -117,7 +124,7 @@ addPlayerView address model =
 focusFilter : Action -> Bool
 focusFilter action =
   case action of
-    AddPlayer -> True
+    GlobalAction.AddPlayer -> True
     _ -> False
 
 
