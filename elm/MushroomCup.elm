@@ -1,5 +1,5 @@
 module MushroomCup where
-import Globals exposing (GlobalAction(AddPlayerGlobal, NoOpGlobal))
+import Globals
 import PlayerList
 import Games
 
@@ -37,7 +37,7 @@ type Action =
   NoOp
   | PlayerList PlayerList.Action
   | Games Games.Action
-  | Global GlobalAction
+  | Global Globals.GlobalAction
 
 actions : Signal.Mailbox Action
 actions =
