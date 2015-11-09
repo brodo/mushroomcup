@@ -11,6 +11,7 @@ type alias Game =
   { places : List (Int, String)
   , isFinished : Bool
   , isRunning : Bool
+  , players : List String
   }
 
 
@@ -26,12 +27,15 @@ initialModel =
   , players = []
   }
 
+playersPerGame =
+  4
+
 
 -- Actions
 
 
-type Action =
-  NoOp
+type Action
+  = NoOp
   | Global GlobalAction
 
 -- Update
@@ -45,9 +49,12 @@ update action model =
     Global act ->
       case act of
         AddPlayerGlobal player ->
-          { model |
-            players <- player :: model.players
-          }
+          let
+            gameToAddTo 
+          in
+            { model |
+              players <- player :: model.players
+            }
         RemovePlayerGlobal player ->
           { model |
              players <- List.filter (\str -> str /= player) model.players
@@ -61,4 +68,4 @@ update action model =
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-  text <| toString model.players
+  text <| toString model
