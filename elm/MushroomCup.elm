@@ -39,9 +39,12 @@ type Action =
   | Games Games.Action
   | Global Globals.GlobalAction
 
+
 actions : Signal.Mailbox Action
 actions =
   Signal.mailbox NoOp
+
+
 
 -- Update
 
@@ -55,20 +58,30 @@ update action model =
       let
         (players, globalAction) =
            PlayerList.update act model.playerList
-        newModel = update (Global globalAction) model
+        newModel = updateGlobal globalAction model
       in
         { newModel |
           playerList <- players
         }
     Games act ->
-      { model |
-        games <- Games.update act model.games
-      }
+      let
+        (games, globalAction) =
+          Games.update act model.games
+        newModel = updateGlobal globalAction model
+      in
+        { newModel |
+          games <- games
+        }
     Global act ->
-      { model |
-        games <- Games.update (Games.Global act) model.games
-      }
+      updateGlobal act model
 
+
+updateGlobal : Globals.GlobalAction -> Model -> Model
+updateGlobal action model =
+    { model |
+      games <- Games.updateGlobal action model.games
+    , playerList <- PlayerList.updateGlobal action model.playerList
+    }
 
 
 -- View
@@ -76,13 +89,21 @@ update action model =
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-  div [class "row"]
+  div [class "container"]
   [
     header
-  ,  div [class "col s4"]
-    [ (PlayerList.view (Signal.forwardTo address PlayerList) model.playerList) ]
-  ,  div [class "col s8"]
-    [(Games.view (Signal.forwardTo address Games) model.games)]
+    , div [class "row"]
+      [ div [class "col s4"]
+        [(PlayerList.view (Signal.forwardTo address PlayerList) model.playerList)]
+      , div [class "col s8"]
+        [(Games.view (Signal.forwardTo address Games) model.games)]
+      ]
+    , div [class "row"]
+      [ div [class "col s12"]
+        [ hr [] []
+        , text <| toString model
+        ]
+      ]
   ]
 
 
@@ -91,7 +112,7 @@ header =
   div [class "row"]
   [
     div [class "col s12"]
-      [ h1 [] [text "Mushroom Cup"]
+      [h1 [] [text "Mushroom Cup"]
       ]
   ]
 
@@ -106,13 +127,13 @@ port focus =
       case action of
         PlayerList act ->
           PlayerList.focusSelector act
-        NoOp ->
+        _ ->
           ""
     filter action =
       case action of
         PlayerList act ->
           PlayerList.focusFilter act
-        NoOp ->
+        _ ->
           False
     filteredActions =
       Signal.filter filter NoOp actions.signal
