@@ -1814,70 +1814,147 @@ Elm.Games.make = function (_elm) {
    $Basics = Elm.Basics.make(_elm),
    $Globals = Elm.Globals.make(_elm),
    $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $Html$Events = Elm.Html.Events.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
+   $Random = Elm.Random.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
-   var view = F2(function (address,
+   var shuffleList = F2(function (list,
+   seed) {
+      return function () {
+         var listLength = $List.length(list);
+         var randomListGenerator = A2($Random.list,
+         listLength,
+         A2($Random.$float,0,10));
+         var randomList = $Basics.fst(A2($Random.generate,
+         randomListGenerator,
+         seed));
+         var listOfPairs = A3($List.map2,
+         F2(function (v0,v1) {
+            return {ctor: "_Tuple2"
+                   ,_0: v0
+                   ,_1: v1};
+         }),
+         randomList,
+         list);
+         var listOfSortedPairs = A2($List.sortBy,
+         $Basics.fst,
+         listOfPairs);
+         return A2($List.map,
+         $Basics.snd,
+         listOfSortedPairs);
+      }();
+   });
+   var updateGlobal = F2(function (action,
    model) {
-      return $Html.text($Basics.toString(model.players));
+      return function () {
+         switch (action.ctor)
+         {case "AddPlayerGlobal":
+            return _U.replace([["players"
+                               ,A2($List._op["::"],
+                               action._0,
+                               model.players)]],
+              model);
+            case "NoOpGlobal": return model;
+            case "RemovePlayerGlobal":
+            return _U.replace([["players"
+                               ,A2($List.filter,
+                               function (str) {
+                                  return !_U.eq(str,action._0);
+                               },
+                               model.players)]],
+              model);
+            case "StartTournamentGlobal":
+            return _U.replace([["tournamentStarted"
+                               ,true]
+                              ,["players"
+                               ,A2(shuffleList,
+                               model.players,
+                               model.randomSeed)]],
+              model);}
+         _U.badCase($moduleName,
+         "between lines 77 and 92");
+      }();
    });
    var update = F2(function (action,
    model) {
       return function () {
          switch (action.ctor)
-         {case "Global":
-            return function () {
-                 switch (action._0.ctor)
-                 {case "AddPlayerGlobal":
-                    return _U.replace([["players"
-                                       ,A2($List._op["::"],
-                                       action._0._0,
-                                       model.players)]],
-                      model);
-                    case "NoOpGlobal": return model;
-                    case "RemovePlayerGlobal":
-                    return _U.replace([["players"
-                                       ,A2($List.filter,
-                                       function (str) {
-                                          return !_U.eq(str,
-                                          action._0._0);
-                                       },
-                                       model.players)]],
-                      model);}
-                 _U.badCase($moduleName,
-                 "between lines 46 and 56");
-              }();
-            case "NoOp": return model;}
+         {case "NoOp":
+            return {ctor: "_Tuple2"
+                   ,_0: model
+                   ,_1: $Globals.NoOpGlobal};
+            case "StartTournament":
+            return {ctor: "_Tuple2"
+                   ,_0: _U.replace([["tournamentStarted"
+                                    ,true]
+                                   ,["players"
+                                    ,A2(shuffleList,
+                                    model.players,
+                                    model.randomSeed)]],
+                   model)
+                   ,_1: $Globals.StartTournamentGlobal};}
          _U.badCase($moduleName,
-         "between lines 42 and 56");
+         "between lines 62 and 70");
       }();
    });
    var Global = function (a) {
       return {ctor: "Global"
              ,_0: a};
    };
+   var StartTournament = {ctor: "StartTournament"};
+   var view = F2(function (address,
+   model) {
+      return function () {
+         var startButtonClass = _U.cmp($List.length(model.players),
+         1) > 0 && $Basics.not(model.tournamentStarted) ? "" : "disabled";
+         return A2($Html.div,
+         _L.fromArray([]),
+         _L.fromArray([A2($Html.a,
+         _L.fromArray([$Html$Attributes.$class(A2($Basics._op["++"],
+                      "waves-effect waves-light btn ",
+                      startButtonClass))
+                      ,A2($Html$Events.onClick,
+                      address,
+                      StartTournament)]),
+         _L.fromArray([$Html.text("Start Tournament")]))]));
+      }();
+   });
    var NoOp = {ctor: "NoOp"};
+   var playersPerGame = 4;
    var initialModel = {_: {}
                       ,games: _L.fromArray([])
-                      ,players: _L.fromArray([])};
-   var Model = F2(function (a,b) {
+                      ,players: _L.fromArray([])
+                      ,randomSeed: $Random.initialSeed(4166884)
+                      ,tournamentStarted: false};
+   var Model = F4(function (a,
+   b,
+   c,
+   d) {
       return {_: {}
              ,games: a
-             ,players: b};
+             ,players: b
+             ,randomSeed: d
+             ,tournamentStarted: c};
    });
-   var Game = F3(function (a,b,c) {
+   var Game = F4(function (a,
+   b,
+   c,
+   d) {
       return {_: {}
              ,isFinished: b
              ,isRunning: c
-             ,places: a};
+             ,places: a
+             ,players: d};
    });
    _elm.Games.values = {_op: _op
                        ,initialModel: initialModel
                        ,update: update
+                       ,updateGlobal: updateGlobal
                        ,view: view
-                       ,Model: Model
-                       ,Global: Global};
+                       ,Model: Model};
    return _elm.Games.values;
 };
 Elm.Globals = Elm.Globals || {};
@@ -1896,6 +1973,7 @@ Elm.Globals.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
+   var StartTournamentGlobal = {ctor: "StartTournamentGlobal"};
    var RemovePlayerGlobal = function (a) {
       return {ctor: "RemovePlayerGlobal"
              ,_0: a};
@@ -1908,7 +1986,8 @@ Elm.Globals.make = function (_elm) {
    _elm.Globals.values = {_op: _op
                          ,NoOpGlobal: NoOpGlobal
                          ,AddPlayerGlobal: AddPlayerGlobal
-                         ,RemovePlayerGlobal: RemovePlayerGlobal};
+                         ,RemovePlayerGlobal: RemovePlayerGlobal
+                         ,StartTournamentGlobal: StartTournamentGlobal};
    return _elm.Globals.values;
 };
 Elm.Graphics = Elm.Graphics || {};
@@ -4366,25 +4445,39 @@ Elm.MushroomCup.make = function (_elm) {
    _L.fromArray([A2($Html.h1,
    _L.fromArray([]),
    _L.fromArray([$Html.text("Mushroom Cup")]))]))]));
-   var Global = function (a) {
-      return {ctor: "Global"
-             ,_0: a};
-   };
+   var updateGlobal = F2(function (action,
+   model) {
+      return _U.replace([["games"
+                         ,A2($Games.updateGlobal,
+                         action,
+                         model.games)]
+                        ,["playerList"
+                         ,A2($PlayerList.updateGlobal,
+                         action,
+                         model.playerList)]],
+      model);
+   });
    var update = F2(function (action,
    model) {
       return function () {
          switch (action.ctor)
          {case "Games":
-            return _U.replace([["games"
-                               ,A2($Games.update,
-                               action._0,
-                               model.games)]],
-              model);
+            return function () {
+                 var $ = A2($Games.update,
+                 action._0,
+                 model.games),
+                 games = $._0,
+                 globalAction = $._1;
+                 var newModel = A2(updateGlobal,
+                 globalAction,
+                 model);
+                 return _U.replace([["games"
+                                    ,games]],
+                 newModel);
+              }();
             case "Global":
-            return _U.replace([["games"
-                               ,A2($Games.update,
-                               $Games.Global(action._0),
-                               model.games)]],
+            return A2(updateGlobal,
+              action._0,
               model);
             case "NoOp": return model;
             case "PlayerList":
@@ -4394,17 +4487,21 @@ Elm.MushroomCup.make = function (_elm) {
                  model.playerList),
                  players = $._0,
                  globalAction = $._1;
-                 var newModel = A2(update,
-                 Global(globalAction),
+                 var newModel = A2(updateGlobal,
+                 globalAction,
                  model);
                  return _U.replace([["playerList"
                                     ,players]],
                  newModel);
               }();}
          _U.badCase($moduleName,
-         "between lines 51 and 70");
+         "between lines 54 and 76");
       }();
    });
+   var Global = function (a) {
+      return {ctor: "Global"
+             ,_0: a};
+   };
    var Games = function (a) {
       return {ctor: "Games",_0: a};
    };
@@ -4415,22 +4512,32 @@ Elm.MushroomCup.make = function (_elm) {
    var view = F2(function (address,
    model) {
       return A2($Html.div,
-      _L.fromArray([$Html$Attributes.$class("row")]),
+      _L.fromArray([$Html$Attributes.$class("container")]),
       _L.fromArray([header
                    ,A2($Html.div,
-                   _L.fromArray([$Html$Attributes.$class("col s4")]),
-                   _L.fromArray([A2($PlayerList.view,
-                   A2($Signal.forwardTo,
-                   address,
-                   PlayerList),
-                   model.playerList)]))
+                   _L.fromArray([$Html$Attributes.$class("row")]),
+                   _L.fromArray([A2($Html.div,
+                                _L.fromArray([$Html$Attributes.$class("col s4")]),
+                                _L.fromArray([A2($PlayerList.view,
+                                A2($Signal.forwardTo,
+                                address,
+                                PlayerList),
+                                model.playerList)]))
+                                ,A2($Html.div,
+                                _L.fromArray([$Html$Attributes.$class("col s8")]),
+                                _L.fromArray([A2($Games.view,
+                                A2($Signal.forwardTo,
+                                address,
+                                Games),
+                                model.games)]))]))
                    ,A2($Html.div,
-                   _L.fromArray([$Html$Attributes.$class("col s8")]),
-                   _L.fromArray([A2($Games.view,
-                   A2($Signal.forwardTo,
-                   address,
-                   Games),
-                   model.games)]))]));
+                   _L.fromArray([$Html$Attributes.$class("row")]),
+                   _L.fromArray([A2($Html.div,
+                   _L.fromArray([$Html$Attributes.$class("col s12")]),
+                   _L.fromArray([A2($Html.hr,
+                                _L.fromArray([]),
+                                _L.fromArray([]))
+                                ,$Html.text($Basics.toString(model))]))]))]));
    });
    var NoOp = {ctor: "NoOp"};
    var actions = $Signal.mailbox(NoOp);
@@ -4442,11 +4549,9 @@ Elm.MushroomCup.make = function (_elm) {
       var filter = function (action) {
          return function () {
             switch (action.ctor)
-            {case "NoOp": return false;
-               case "PlayerList":
+            {case "PlayerList":
                return $PlayerList.focusFilter(action._0);}
-            _U.badCase($moduleName,
-            "between lines 112 and 117");
+            return false;
          }();
       };
       var filteredActions = A3($Signal.filter,
@@ -4456,11 +4561,9 @@ Elm.MushroomCup.make = function (_elm) {
       var selector = function (action) {
          return function () {
             switch (action.ctor)
-            {case "NoOp": return "";
-               case "PlayerList":
+            {case "PlayerList":
                return $PlayerList.focusSelector(action._0);}
-            _U.badCase($moduleName,
-            "between lines 106 and 111");
+            return "";
          }();
       };
       return A2($Signal.map,
@@ -4492,6 +4595,7 @@ Elm.MushroomCup.make = function (_elm) {
                              ,Global: Global
                              ,actions: actions
                              ,update: update
+                             ,updateGlobal: updateGlobal
                              ,view: view
                              ,header: header
                              ,main: main};
@@ -12233,6 +12337,17 @@ Elm.PlayerList.make = function (_elm) {
          return false;
       }();
    };
+   var updateGlobal = F2(function (action,
+   model) {
+      return function () {
+         switch (action.ctor)
+         {case "StartTournamentGlobal":
+            return _U.replace([["showAddPlayerView"
+                               ,false]],
+              model);}
+         return model;
+      }();
+   });
    var update = F2(function (action,
    model) {
       return function () {
@@ -12283,9 +12398,13 @@ Elm.PlayerList.make = function (_elm) {
                         ,_1: $Globals.NoOpGlobal};
               }();}
          _U.badCase($moduleName,
-         "between lines 46 and 79");
+         "between lines 53 and 86");
       }();
    });
+   var Global = function (a) {
+      return {ctor: "Global"
+             ,_0: a};
+   };
    var RemovePlayer = function (a) {
       return {ctor: "RemovePlayer"
              ,_0: a};
@@ -12363,13 +12482,15 @@ Elm.PlayerList.make = function (_elm) {
          var list = A2($List.map,
          listItem,
          model.players);
-         var listWithHeaderAndFooter = A2($List.append,
+         var listWithHeaderAndFooter = model.showAddPlayerView ? A2($List.append,
          A2($List._op["::"],
          listHeader,
          list),
          _L.fromArray([A2(addPlayerView,
          address,
-         model)]));
+         model)])) : A2($List._op["::"],
+         listHeader,
+         list);
          return $Html.ul(_L.fromArray([$Html$Attributes.$class("collection with-header")]))(listWithHeaderAndFooter);
       }();
    });
@@ -12377,25 +12498,315 @@ Elm.PlayerList.make = function (_elm) {
                       ,isValidPlayerName: false
                       ,newPlayer: ""
                       ,players: _L.fromArray([])
+                      ,showAddPlayerView: true
                       ,showErrorInTextField: false};
-   var Model = F4(function (a,
+   var Model = F5(function (a,
    b,
    c,
-   d) {
+   d,
+   e) {
       return {_: {}
              ,isValidPlayerName: c
              ,newPlayer: a
              ,players: b
+             ,showAddPlayerView: e
              ,showErrorInTextField: d};
    });
    _elm.PlayerList.values = {_op: _op
                             ,initialModel: initialModel
                             ,update: update
+                            ,updateGlobal: updateGlobal
                             ,view: view
                             ,focusFilter: focusFilter
                             ,focusSelector: focusSelector
-                            ,Model: Model};
+                            ,Model: Model
+                            ,Global: Global};
    return _elm.PlayerList.values;
+};
+Elm.Random = Elm.Random || {};
+Elm.Random.make = function (_elm) {
+   "use strict";
+   _elm.Random = _elm.Random || {};
+   if (_elm.Random.values)
+   return _elm.Random.values;
+   var _op = {},
+   _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   $moduleName = "Random",
+   $Basics = Elm.Basics.make(_elm),
+   $List = Elm.List.make(_elm);
+   var magicNum8 = 2147483562;
+   var range = function (_v0) {
+      return function () {
+         return {ctor: "_Tuple2"
+                ,_0: 0
+                ,_1: magicNum8};
+      }();
+   };
+   var magicNum7 = 2137383399;
+   var magicNum6 = 2147483563;
+   var magicNum5 = 3791;
+   var magicNum4 = 40692;
+   var magicNum3 = 52774;
+   var magicNum2 = 12211;
+   var magicNum1 = 53668;
+   var magicNum0 = 40014;
+   var generate = F2(function (_v2,
+   seed) {
+      return function () {
+         switch (_v2.ctor)
+         {case "Generator":
+            return _v2._0(seed);}
+         _U.badCase($moduleName,
+         "on line 246, column 5 to 19");
+      }();
+   });
+   var Seed = F4(function (a,
+   b,
+   c,
+   d) {
+      return {_: {}
+             ,next: b
+             ,range: d
+             ,split: c
+             ,state: a};
+   });
+   var State = F2(function (a,b) {
+      return {ctor: "State"
+             ,_0: a
+             ,_1: b};
+   });
+   var initState = function (s$) {
+      return function () {
+         var s = A2($Basics.max,
+         s$,
+         0 - s$);
+         var q = s / (magicNum6 - 1) | 0;
+         var s2 = A2($Basics._op["%"],
+         q,
+         magicNum7 - 1);
+         var s1 = A2($Basics._op["%"],
+         s,
+         magicNum6 - 1);
+         return A2(State,s1 + 1,s2 + 1);
+      }();
+   };
+   var next = function (_v5) {
+      return function () {
+         switch (_v5.ctor)
+         {case "State":
+            return function () {
+                 var k$ = _v5._1 / magicNum3 | 0;
+                 var s2$ = magicNum4 * (_v5._1 - k$ * magicNum3) - k$ * magicNum5;
+                 var s2$$ = _U.cmp(s2$,
+                 0) < 0 ? s2$ + magicNum7 : s2$;
+                 var k = _v5._0 / magicNum1 | 0;
+                 var s1$ = magicNum0 * (_v5._0 - k * magicNum1) - k * magicNum2;
+                 var s1$$ = _U.cmp(s1$,
+                 0) < 0 ? s1$ + magicNum6 : s1$;
+                 var z = s1$$ - s2$$;
+                 var z$ = _U.cmp(z,
+                 1) < 0 ? z + magicNum8 : z;
+                 return {ctor: "_Tuple2"
+                        ,_0: z$
+                        ,_1: A2(State,s1$$,s2$$)};
+              }();}
+         _U.badCase($moduleName,
+         "between lines 290 and 299");
+      }();
+   };
+   var split = function (_v9) {
+      return function () {
+         switch (_v9.ctor)
+         {case "State":
+            return function () {
+                 var _raw = $Basics.snd(next(_v9)),
+                 $ = _raw.ctor === "State" ? _raw : _U.badCase($moduleName,
+                 "on line 306, column 25 to 38"),
+                 t1 = $._0,
+                 t2 = $._1;
+                 var new_s2 = _U.eq(_v9._1,
+                 1) ? magicNum7 - 1 : _v9._1 - 1;
+                 var new_s1 = _U.eq(_v9._0,
+                 magicNum6 - 1) ? 1 : _v9._0 + 1;
+                 return {ctor: "_Tuple2"
+                        ,_0: A2(State,new_s1,t2)
+                        ,_1: A2(State,t1,new_s2)};
+              }();}
+         _U.badCase($moduleName,
+         "between lines 304 and 308");
+      }();
+   };
+   var initialSeed = function (n) {
+      return A4(Seed,
+      initState(n),
+      next,
+      split,
+      range);
+   };
+   var Generator = function (a) {
+      return {ctor: "Generator"
+             ,_0: a};
+   };
+   var customGenerator = function (generate) {
+      return Generator(generate);
+   };
+   var listHelp = F4(function (list,
+   n,
+   generate,
+   seed) {
+      return _U.cmp(n,
+      1) < 0 ? {ctor: "_Tuple2"
+               ,_0: $List.reverse(list)
+               ,_1: seed} : function () {
+         var $ = generate(seed),
+         value = $._0,
+         seed$ = $._1;
+         return A4(listHelp,
+         A2($List._op["::"],value,list),
+         n - 1,
+         generate,
+         seed$);
+      }();
+   });
+   var list = F2(function (n,
+   _v13) {
+      return function () {
+         switch (_v13.ctor)
+         {case "Generator":
+            return Generator(function (seed) {
+                 return A4(listHelp,
+                 _L.fromArray([]),
+                 n,
+                 _v13._0,
+                 seed);
+              });}
+         _U.badCase($moduleName,
+         "between lines 182 and 183");
+      }();
+   });
+   var pair = F2(function (_v16,
+   _v17) {
+      return function () {
+         switch (_v17.ctor)
+         {case "Generator":
+            return function () {
+                 switch (_v16.ctor)
+                 {case "Generator":
+                    return Generator(function (seed) {
+                         return function () {
+                            var $ = _v16._0(seed),
+                            left = $._0,
+                            seed$ = $._1;
+                            var $ = _v17._0(seed$),
+                            right = $._0,
+                            seed$$ = $._1;
+                            return {ctor: "_Tuple2"
+                                   ,_0: {ctor: "_Tuple2"
+                                        ,_0: left
+                                        ,_1: right}
+                                   ,_1: seed$$};
+                         }();
+                      });}
+                 _U.badCase($moduleName,
+                 "between lines 159 and 163");
+              }();}
+         _U.badCase($moduleName,
+         "between lines 159 and 163");
+      }();
+   });
+   var minInt = -2147483648;
+   var maxInt = 2147483647;
+   var iLogBase = F2(function (b,
+   i) {
+      return _U.cmp(i,
+      b) < 0 ? 1 : 1 + A2(iLogBase,
+      b,
+      i / b | 0);
+   });
+   var $int = F2(function (a,b) {
+      return Generator(function (seed) {
+         return function () {
+            var base = 2147483561;
+            var f = F3(function (n,
+            acc,
+            state) {
+               return function () {
+                  switch (n)
+                  {case 0: return {ctor: "_Tuple2"
+                                  ,_0: acc
+                                  ,_1: state};}
+                  return function () {
+                     var $ = seed.next(state),
+                     x = $._0,
+                     state$ = $._1;
+                     return A3(f,
+                     n - 1,
+                     x + acc * base,
+                     state$);
+                  }();
+               }();
+            });
+            var $ = _U.cmp(a,
+            b) < 0 ? {ctor: "_Tuple2"
+                     ,_0: a
+                     ,_1: b} : {ctor: "_Tuple2"
+                               ,_0: b
+                               ,_1: a},
+            lo = $._0,
+            hi = $._1;
+            var k = hi - lo + 1;
+            var n = A2(iLogBase,base,k);
+            var $ = A3(f,n,1,seed.state),
+            v = $._0,
+            state$ = $._1;
+            return {ctor: "_Tuple2"
+                   ,_0: lo + A2($Basics._op["%"],
+                   v,
+                   k)
+                   ,_1: _U.replace([["state"
+                                    ,state$]],
+                   seed)};
+         }();
+      });
+   });
+   var $float = F2(function (a,b) {
+      return Generator(function (seed) {
+         return function () {
+            var $ = A2(generate,
+            A2($int,minInt,maxInt),
+            seed),
+            number = $._0,
+            seed$ = $._1;
+            var negativeOneToOne = $Basics.toFloat(number) / $Basics.toFloat(maxInt - minInt);
+            var $ = _U.cmp(a,
+            b) < 0 ? {ctor: "_Tuple2"
+                     ,_0: a
+                     ,_1: b} : {ctor: "_Tuple2"
+                               ,_0: b
+                               ,_1: a},
+            lo = $._0,
+            hi = $._1;
+            var scaled = (lo + hi) / 2 + (hi - lo) * negativeOneToOne;
+            return {ctor: "_Tuple2"
+                   ,_0: scaled
+                   ,_1: seed$};
+         }();
+      });
+   });
+   _elm.Random.values = {_op: _op
+                        ,$int: $int
+                        ,$float: $float
+                        ,list: list
+                        ,pair: pair
+                        ,minInt: minInt
+                        ,maxInt: maxInt
+                        ,generate: generate
+                        ,initialSeed: initialSeed
+                        ,customGenerator: customGenerator
+                        ,Seed: Seed};
+   return _elm.Random.values;
 };
 Elm.Result = Elm.Result || {};
 Elm.Result.make = function (_elm) {

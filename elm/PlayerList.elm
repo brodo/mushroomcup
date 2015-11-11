@@ -1,5 +1,5 @@
 module PlayerList
-  (Model, Action, initialModel, update, view,
+  (Model, Action(Global), initialModel, update, updateGlobal, view,
    focusFilter, focusSelector) where
 import Globals exposing
   (GlobalAction(AddPlayerGlobal, NoOpGlobal, RemovePlayerGlobal))
@@ -17,6 +17,7 @@ type alias Model =
   , players : List String
   , isValidPlayerName : Bool
   , showErrorInTextField : Bool
+  , showAddPlayerView : Bool
   }
 
 
@@ -25,7 +26,9 @@ initialModel =
   { newPlayer = ""
   , players = []
   , isValidPlayerName = False
-  , showErrorInTextField = False }
+  , showErrorInTextField = False
+  , showAddPlayerView = True
+  }
 
 
 -- Actions
@@ -36,11 +39,15 @@ type Action =
   | AddPlayer
   | SetNewPlayerName String
   | RemovePlayer String
+  | Global GlobalAction
 
 
 --- Update
 
-
+{-
+  This updates the local model and also returns a global action to perform
+  on other models by calling the corresponding 'updateGlobal' functions.
+-}
 update : Action -> Model -> (Model, GlobalAction)
 update action model =
   case action of
@@ -79,6 +86,17 @@ update action model =
         )
 
 
+updateGlobal : GlobalAction -> Model -> Model
+updateGlobal action model =
+  case action of
+    Globals.StartTournamentGlobal ->
+      { model |
+         showAddPlayerView <- False
+      }
+    _ ->
+      model
+
+
 -- View
 
 view : Signal.Address Action -> Model -> Html
@@ -100,7 +118,9 @@ view address model =
     list =
       List.map listItem model.players
     listWithHeaderAndFooter =
-      List.append (listHeader :: list) [(addPlayerView address model)]
+      if model.showAddPlayerView
+        then List.append (listHeader :: list) [(addPlayerView address model)]
+        else  (listHeader :: list)
   in
     ul [class "collection with-header"] <| listWithHeaderAndFooter
 
