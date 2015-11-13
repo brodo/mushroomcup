@@ -5,9 +5,11 @@ import Games
 
 
 import String
+import Time
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+
 
 -- Model
 
@@ -25,9 +27,19 @@ initialModel =
   }
 
 
+
+ticker : Signal Action
+ticker =
+  Signal.map (Global << Globals.SetTimeGlobal) (Time.every Time.second)
+
+allSignals : Signal Action
+allSignals = Signal.merge actions.signal ticker
+
 model : Signal Model
 model =
-  Signal.foldp update initialModel actions.signal
+  Signal.foldp update initialModel allSignals
+
+
 
 
 -- Actions
@@ -43,7 +55,6 @@ type Action =
 actions : Signal.Mailbox Action
 actions =
   Signal.mailbox NoOp
-
 
 
 -- Update

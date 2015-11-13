@@ -1,7 +1,8 @@
 module Globals
   (GlobalAction(NoOpGlobal, AddPlayerGlobal, RemovePlayerGlobal,
-    StartTournamentGlobal))
+    StartTournamentGlobal, SetTimeGlobal))
   where
+import Time
 
 
 type GlobalAction =
@@ -9,3 +10,4 @@ type GlobalAction =
   | AddPlayerGlobal String
   | RemovePlayerGlobal String
   | StartTournamentGlobal
+  | SetTimeGlobal Time.Time

@@ -1,7 +1,8 @@
 module Games (Model, Action, initialModel, update, updateGlobal, view) where
 import Globals exposing
   (GlobalAction
-    (AddPlayerGlobal, RemovePlayerGlobal, NoOpGlobal, StartTournamentGlobal)
+    (AddPlayerGlobal, RemovePlayerGlobal, NoOpGlobal, StartTournamentGlobal,
+    SetTimeGlobal)
   )
 import Html exposing (..)
 import Html.Attributes exposing (class)
@@ -9,6 +10,7 @@ import Html.Events exposing (..)
 import Random
 import List
 import Maybe
+import Time
 
 
 -- Model
@@ -88,8 +90,14 @@ updateGlobal action model =
         tournamentStarted <- True
       , players <- shuffleList model.players model.randomSeed
       }
-    NoOpGlobal ->
+    SetTimeGlobal time ->
+      { model |
+        randomSeed <- Random.initialSeed <| truncate time
+      }
+
+    _ ->
       model
+
 
 
 
