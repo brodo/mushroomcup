@@ -9,16 +9,19 @@ grunt.initConfig({
            "elm/MushroomCup.elm",
            "elm/Globals.elm",
            "elm/PlayerList.elm",
-           "elm/Games.elm"]
+           "elm/Games.elm",
+           "elm/ListUtils.elm"]
        }
      }
    },
    watch: {
      elm: {
        files: ["elm/MushroomCup.elm",
-        "elm/Globals.elm", 
+        "elm/Globals.elm",
         "elm/PlayerList.elm",
-        "elm/Games.elm"],
+        "elm/Games.elm",
+        "elm/ListUtils.elm"
+      ],
        tasks: ["elm"]
      }
    },

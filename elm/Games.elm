@@ -8,19 +8,27 @@ import Html exposing (..)
 import Html.Attributes exposing (class)
 import Html.Events exposing (..)
 import Random
-import List
-import Maybe
+import ListUtils
 import Time
 
 
 -- Model
-
 
 type alias Game =
   { places : List (Int, String)
   , isFinished : Bool
   , isRunning : Bool
   , players : List String
+  , id : Int
+  }
+
+newGame : Int -> List String -> Game
+newGame id players =
+  { places = []
+  , isFinished = False
+  , isRunning = False
+  , players = players
+  , id = id + 1
   }
 
 
@@ -40,8 +48,13 @@ initialModel =
   , randomSeed = Random.initialSeed 4166884
   }
 
-playersPerGame =
+
+maxPlayersPerGame =
   4
+
+
+minPlayersPerGame =
+  2
 
 
 -- Actions
@@ -50,6 +63,7 @@ playersPerGame =
 type Action
   = NoOp
   | StartTournament
+  | StartGame Int
   | Global Globals.GlobalAction
 
 
@@ -67,9 +81,32 @@ update action model =
     StartTournament ->
       ( { model |
          tournamentStarted <- True
-         , players <- shuffleList model.players model.randomSeed
+         , games <- (makeGames model.players model.randomSeed)
         }
         , StartTournamentGlobal)
+    StartGame id ->
+      ( model
+      , NoOpGlobal)
+
+
+
+
+makeGames : List String -> Random.Seed -> List Game
+makeGames players seed =
+  let
+    randomList = ListUtils.shuffle players seed
+    numberOfPlayers = List.length randomList
+    canBeDevidedEvenly = (numberOfPlayers % maxPlayersPerGame) == 0
+    numberOfCompleteGames = numberOfPlayers // maxPlayersPerGame
+    numberOfGames =
+      if canBeDevidedEvenly
+      then numberOfCompleteGames
+      else numberOfCompleteGames + 1
+    numberOfPlayersPerGame = numberOfPlayers // numberOfGames
+    listOfLists = ListUtils.divideInto randomList numberOfGames
+  in
+     List.indexedMap newGame listOfLists
+
 
 
 
@@ -85,11 +122,6 @@ updateGlobal action model =
       { model |
          players <- List.filter (\str -> str /= player) model.players
       }
-    StartTournamentGlobal ->
-      { model |
-        tournamentStarted <- True
-      , players <- shuffleList model.players model.randomSeed
-      }
     SetTimeGlobal time ->
       { model |
         randomSeed <- Random.initialSeed <| truncate time
@@ -99,33 +131,60 @@ updateGlobal action model =
       model
 
 
-
-
-shuffleList : List a -> Random.Seed -> List a
-shuffleList list seed =
-  let
-    listLength = List.length list
-    randomListGenerator = Random.list listLength (Random.float 0 10)
-    randomList = fst (Random.generate randomListGenerator seed)
-    listOfPairs = List.map2 (,) randomList list
-    listOfSortedPairs = List.sortBy fst listOfPairs
-  in
-    List.map snd listOfSortedPairs
-
-
 -- View
 
 
 view : Signal.Address Action -> Model -> Html
 view address model =
   let
-    startButtonClass =
+    games = List.map (gameCard address) model.games
+    button = startTournamentButton address model
+  in
+    div [] (button :: games)
+
+
+startTournamentButton : Signal.Address Action -> Model -> Html
+startTournamentButton address model =
+  let
+    startTournamentButtonClass =
       if List.length model.players > 1 && not model.tournamentStarted
         then ""
         else "disabled"
   in
     div [][
-      a [ class ("waves-effect waves-light btn " ++ startButtonClass)
+      a [ class ("waves-effect waves-light btn " ++ startTournamentButtonClass)
         , onClick address StartTournament
-        ] [text "Start Tournament"]
+        ] [if model.tournamentStarted
+            then text "Tournament Started!"
+            else text "Start Tournament"]
+    ]
+
+gameCard : Signal.Address Action -> Game -> Html
+gameCard address game =
+  let
+    playerListItem player =
+      li [class "collection-item"] [text player]
+  in
+  div [ class "card blue-grey darken-1" ]
+    [ div [class "card-content"]
+      [ span [class "card-title"] [text <| "Game " ++ (toString game.id)]
+      ,  ul [class "collection"] (List.map playerListItem game.players)
+      , startGameButton address game
+      ]
+    ]
+
+startGameButton : Signal.Address Action -> Game -> Html
+startGameButton address game =
+  let
+    startGameButtonClass =
+      if game.isRunning
+        then "disabled"
+        else ""
+  in
+    div [][
+      a [ class ("waves-effect waves-light btn " ++ startGameButtonClass)
+        , onClick address (StartGame game.id)
+        ] [if game.isRunning
+            then text "Game Finished"
+            else text "Start Game"]
     ]

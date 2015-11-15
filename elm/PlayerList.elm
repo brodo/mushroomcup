@@ -17,7 +17,7 @@ type alias Model =
   , players : List String
   , isValidPlayerName : Bool
   , showErrorInTextField : Bool
-  , showAddPlayerView : Bool
+  , tournamentStarted : Bool
   }
 
 
@@ -27,7 +27,7 @@ initialModel =
   , players = []
   , isValidPlayerName = False
   , showErrorInTextField = False
-  , showAddPlayerView = True
+  , tournamentStarted = True
   }
 
 
@@ -91,7 +91,7 @@ updateGlobal action model =
   case action of
     Globals.StartTournamentGlobal ->
       { model |
-         showAddPlayerView <- False
+         tournamentStarted <- False
       }
     _ ->
       model
@@ -105,12 +105,17 @@ view address model =
     listItem str =
       li [class "collection-item"]
         [div []
-          [text str
-          ,a [class "secondary-content"
-              ,style [("cursor", "pointer")]
-              ,onClick address (RemovePlayer str)
-              ]
-            [i [class "material-icons"] [text "delete"]]
+          [
+          text str
+          , if model.tournamentStarted
+            then
+              a [class "secondary-content"
+                ,style [("cursor", "pointer")]
+                ,onClick address (RemovePlayer str)
+                ]
+              [i [class "material-icons"] [text "delete"]]
+            else
+              text ""
           ]
         ]
     listHeader =
@@ -118,11 +123,13 @@ view address model =
     list =
       List.map listItem model.players
     listWithHeaderAndFooter =
-      if model.showAddPlayerView
+      if model.tournamentStarted
         then List.append (listHeader :: list) [(addPlayerView address model)]
         else  (listHeader :: list)
   in
     ul [class "collection with-header"] <| listWithHeaderAndFooter
+
+
 
 
 addPlayerView : Signal.Address Action -> Model -> Html

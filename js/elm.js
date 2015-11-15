@@ -1817,36 +1817,11 @@ Elm.Games.make = function (_elm) {
    $Html$Attributes = Elm.Html.Attributes.make(_elm),
    $Html$Events = Elm.Html.Events.make(_elm),
    $List = Elm.List.make(_elm),
+   $ListUtils = Elm.ListUtils.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Random = Elm.Random.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
-   var shuffleList = F2(function (list,
-   seed) {
-      return function () {
-         var listLength = $List.length(list);
-         var randomListGenerator = A2($Random.list,
-         listLength,
-         A2($Random.$float,0,10));
-         var randomList = $Basics.fst(A2($Random.generate,
-         randomListGenerator,
-         seed));
-         var listOfPairs = A3($List.map2,
-         F2(function (v0,v1) {
-            return {ctor: "_Tuple2"
-                   ,_0: v0
-                   ,_1: v1};
-         }),
-         randomList,
-         list);
-         var listOfSortedPairs = A2($List.sortBy,
-         $Basics.fst,
-         listOfPairs);
-         return A2($List.map,
-         $Basics.snd,
-         listOfSortedPairs);
-      }();
-   });
    var updateGlobal = F2(function (action,
    model) {
       return function () {
@@ -1857,7 +1832,6 @@ Elm.Games.make = function (_elm) {
                                action._0,
                                model.players)]],
               model);
-            case "NoOpGlobal": return model;
             case "RemovePlayerGlobal":
             return _U.replace([["players"
                                ,A2($List.filter,
@@ -1866,64 +1840,101 @@ Elm.Games.make = function (_elm) {
                                },
                                model.players)]],
               model);
-            case "StartTournamentGlobal":
-            return _U.replace([["tournamentStarted"
-                               ,true]
-                              ,["players"
-                               ,A2(shuffleList,
-                               model.players,
-                               model.randomSeed)]],
+            case "SetTimeGlobal":
+            return _U.replace([["randomSeed"
+                               ,$Random.initialSeed($Basics.truncate(action._0))]],
               model);}
-         _U.badCase($moduleName,
-         "between lines 77 and 92");
-      }();
-   });
-   var update = F2(function (action,
-   model) {
-      return function () {
-         switch (action.ctor)
-         {case "NoOp":
-            return {ctor: "_Tuple2"
-                   ,_0: model
-                   ,_1: $Globals.NoOpGlobal};
-            case "StartTournament":
-            return {ctor: "_Tuple2"
-                   ,_0: _U.replace([["tournamentStarted"
-                                    ,true]
-                                   ,["players"
-                                    ,A2(shuffleList,
-                                    model.players,
-                                    model.randomSeed)]],
-                   model)
-                   ,_1: $Globals.StartTournamentGlobal};}
-         _U.badCase($moduleName,
-         "between lines 62 and 70");
+         return model;
       }();
    });
    var Global = function (a) {
       return {ctor: "Global"
              ,_0: a};
    };
+   var StartGame = function (a) {
+      return {ctor: "StartGame"
+             ,_0: a};
+   };
+   var startGameButton = F2(function (address,
+   game) {
+      return function () {
+         var startGameButtonClass = game.isRunning ? "disabled" : "";
+         return A2($Html.div,
+         _L.fromArray([]),
+         _L.fromArray([A2($Html.a,
+         _L.fromArray([$Html$Attributes.$class(A2($Basics._op["++"],
+                      "waves-effect waves-light btn ",
+                      startGameButtonClass))
+                      ,A2($Html$Events.onClick,
+                      address,
+                      StartGame(game.id))]),
+         _L.fromArray([game.isRunning ? $Html.text("Game Finished") : $Html.text("Start Game")]))]));
+      }();
+   });
+   var gameCard = F2(function (address,
+   game) {
+      return function () {
+         var playerListItem = function (player) {
+            return A2($Html.li,
+            _L.fromArray([$Html$Attributes.$class("collection-item")]),
+            _L.fromArray([$Html.text(player)]));
+         };
+         return A2($Html.div,
+         _L.fromArray([$Html$Attributes.$class("card blue-grey darken-1")]),
+         _L.fromArray([A2($Html.div,
+         _L.fromArray([$Html$Attributes.$class("card-content")]),
+         _L.fromArray([A2($Html.span,
+                      _L.fromArray([$Html$Attributes.$class("card-title")]),
+                      _L.fromArray([$Html.text(A2($Basics._op["++"],
+                      "Game ",
+                      $Basics.toString(game.id)))]))
+                      ,A2($Html.ul,
+                      _L.fromArray([$Html$Attributes.$class("collection")]),
+                      A2($List.map,
+                      playerListItem,
+                      game.players))
+                      ,A2(startGameButton,
+                      address,
+                      game)]))]));
+      }();
+   });
    var StartTournament = {ctor: "StartTournament"};
-   var view = F2(function (address,
+   var startTournamentButton = F2(function (address,
    model) {
       return function () {
-         var startButtonClass = _U.cmp($List.length(model.players),
+         var startTournamentButtonClass = _U.cmp($List.length(model.players),
          1) > 0 && $Basics.not(model.tournamentStarted) ? "" : "disabled";
          return A2($Html.div,
          _L.fromArray([]),
          _L.fromArray([A2($Html.a,
          _L.fromArray([$Html$Attributes.$class(A2($Basics._op["++"],
                       "waves-effect waves-light btn ",
-                      startButtonClass))
+                      startTournamentButtonClass))
                       ,A2($Html$Events.onClick,
                       address,
                       StartTournament)]),
-         _L.fromArray([$Html.text("Start Tournament")]))]));
+         _L.fromArray([model.tournamentStarted ? $Html.text("Tournament Started!") : $Html.text("Start Tournament")]))]));
+      }();
+   });
+   var view = F2(function (address,
+   model) {
+      return function () {
+         var button = A2(startTournamentButton,
+         address,
+         model);
+         var games = A2($List.map,
+         gameCard(address),
+         model.games);
+         return A2($Html.div,
+         _L.fromArray([]),
+         A2($List._op["::"],
+         button,
+         games));
       }();
    });
    var NoOp = {ctor: "NoOp"};
-   var playersPerGame = 4;
+   var minPlayersPerGame = 2;
+   var maxPlayersPerGame = 4;
    var initialModel = {_: {}
                       ,games: _L.fromArray([])
                       ,players: _L.fromArray([])
@@ -1939,11 +1950,70 @@ Elm.Games.make = function (_elm) {
              ,randomSeed: d
              ,tournamentStarted: c};
    });
-   var Game = F4(function (a,
+   var newGame = F2(function (id,
+   players) {
+      return {_: {}
+             ,id: id + 1
+             ,isFinished: false
+             ,isRunning: false
+             ,places: _L.fromArray([])
+             ,players: players};
+   });
+   var makeGames = F2(function (players,
+   seed) {
+      return function () {
+         var randomList = A2($ListUtils.shuffle,
+         players,
+         seed);
+         var numberOfPlayers = $List.length(randomList);
+         var canBeDevidedEvenly = _U.eq(A2($Basics._op["%"],
+         numberOfPlayers,
+         maxPlayersPerGame),
+         0);
+         var numberOfCompleteGames = numberOfPlayers / maxPlayersPerGame | 0;
+         var numberOfGames = canBeDevidedEvenly ? numberOfCompleteGames : numberOfCompleteGames + 1;
+         var numberOfPlayersPerGame = numberOfPlayers / numberOfGames | 0;
+         var listOfLists = A2($ListUtils.divideInto,
+         randomList,
+         numberOfGames);
+         return A2($List.indexedMap,
+         newGame,
+         listOfLists);
+      }();
+   });
+   var update = F2(function (action,
+   model) {
+      return function () {
+         switch (action.ctor)
+         {case "NoOp":
+            return {ctor: "_Tuple2"
+                   ,_0: model
+                   ,_1: $Globals.NoOpGlobal};
+            case "StartGame":
+            return {ctor: "_Tuple2"
+                   ,_0: model
+                   ,_1: $Globals.NoOpGlobal};
+            case "StartTournament":
+            return {ctor: "_Tuple2"
+                   ,_0: _U.replace([["tournamentStarted"
+                                    ,true]
+                                   ,["games"
+                                    ,A2(makeGames,
+                                    model.players,
+                                    model.randomSeed)]],
+                   model)
+                   ,_1: $Globals.StartTournamentGlobal};}
+         _U.badCase($moduleName,
+         "between lines 78 and 89");
+      }();
+   });
+   var Game = F5(function (a,
    b,
    c,
-   d) {
+   d,
+   e) {
       return {_: {}
+             ,id: e
              ,isFinished: b
              ,isRunning: c
              ,places: a
@@ -1972,7 +2042,12 @@ Elm.Globals.make = function (_elm) {
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
+   $Signal = Elm.Signal.make(_elm),
+   $Time = Elm.Time.make(_elm);
+   var SetTimeGlobal = function (a) {
+      return {ctor: "SetTimeGlobal"
+             ,_0: a};
+   };
    var StartTournamentGlobal = {ctor: "StartTournamentGlobal"};
    var RemovePlayerGlobal = function (a) {
       return {ctor: "RemovePlayerGlobal"
@@ -1987,7 +2062,8 @@ Elm.Globals.make = function (_elm) {
                          ,NoOpGlobal: NoOpGlobal
                          ,AddPlayerGlobal: AddPlayerGlobal
                          ,RemovePlayerGlobal: RemovePlayerGlobal
-                         ,StartTournamentGlobal: StartTournamentGlobal};
+                         ,StartTournamentGlobal: StartTournamentGlobal
+                         ,SetTimeGlobal: SetTimeGlobal};
    return _elm.Globals.values;
 };
 Elm.Graphics = Elm.Graphics || {};
@@ -4344,6 +4420,128 @@ Elm.List.make = function (_elm) {
                       ,sortWith: sortWith};
    return _elm.List.values;
 };
+Elm.ListUtils = Elm.ListUtils || {};
+Elm.ListUtils.make = function (_elm) {
+   "use strict";
+   _elm.ListUtils = _elm.ListUtils || {};
+   if (_elm.ListUtils.values)
+   return _elm.ListUtils.values;
+   var _op = {},
+   _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   $moduleName = "ListUtils",
+   $Basics = Elm.Basics.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Random = Elm.Random.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var addToFront = F3(function (count,
+   current,
+   list) {
+      return function () {
+         var tl = A2($Maybe.withDefault,
+         _L.fromArray([]),
+         $List.tail(list));
+         var hd = A2($Maybe.withDefault,
+         _L.fromArray([]),
+         $List.head(list));
+         return _U.cmp($List.length(hd),
+         count) > -1 ? A2($List._op["::"],
+         _L.fromArray([current]),
+         list) : A2($List._op["::"],
+         A2($List._op["::"],current,hd),
+         tl);
+      }();
+   });
+   var divideInto = F2(function (list,
+   numberOfSublists) {
+      return function () {
+         var listLength = $List.length(list);
+         var targetSize = $List.length(list) / numberOfSublists | 0;
+         var listOfLists = A3($List.foldl,
+         addToFront(targetSize),
+         _L.fromArray([]),
+         list);
+         var hasAdditionalElements = _U.cmp($List.length(listOfLists),
+         numberOfSublists) > 0;
+         return hasAdditionalElements ? function () {
+            var addAdditionals = F2(function (additional,
+            list) {
+               return function () {
+                  switch (additional.ctor)
+                  {case "Just":
+                     return A2($List._op["::"],
+                       additional._0,
+                       list);
+                     case "Nothing": return list;}
+                  _U.badCase($moduleName,
+                  "between lines 49 and 54");
+               }();
+            });
+            var normalSublists = A2($Maybe.withDefault,
+            _L.fromArray([]),
+            $List.tail(listOfLists));
+            var additionalElements = A2($Maybe.withDefault,
+            _L.fromArray([]),
+            $List.head(listOfLists));
+            var numberOfAdditionalElements = $List.length(additionalElements);
+            var nothings = A2($List.repeat,
+            listLength - numberOfAdditionalElements,
+            $Maybe.Nothing);
+            var justs = A2($List.map,
+            $Maybe.Just,
+            additionalElements);
+            var additionals = A2($List.append,
+            justs,
+            nothings);
+            return A3($List.map2,
+            addAdditionals,
+            additionals,
+            normalSublists);
+         }() : listOfLists;
+      }();
+   });
+   var divide = F2(function (list,
+   size) {
+      return A3($List.foldl,
+      addToFront(size),
+      _L.fromArray([]),
+      list);
+   });
+   var shuffle = F2(function (list,
+   seed) {
+      return function () {
+         var listLength = $List.length(list);
+         var randomListGenerator = A2($Random.list,
+         listLength,
+         A2($Random.$float,0,10));
+         var randomList = $Basics.fst(A2($Random.generate,
+         randomListGenerator,
+         seed));
+         var listOfPairs = A3($List.map2,
+         F2(function (v0,v1) {
+            return {ctor: "_Tuple2"
+                   ,_0: v0
+                   ,_1: v1};
+         }),
+         randomList,
+         list);
+         var listOfSortedPairs = A2($List.sortBy,
+         $Basics.fst,
+         listOfPairs);
+         return A2($List.map,
+         $Basics.snd,
+         listOfSortedPairs);
+      }();
+   });
+   _elm.ListUtils.values = {_op: _op
+                           ,shuffle: shuffle
+                           ,divide: divide
+                           ,divideInto: divideInto};
+   return _elm.ListUtils.values;
+};
 Elm.Maybe = Elm.Maybe || {};
 Elm.Maybe.make = function (_elm) {
    "use strict";
@@ -4437,7 +4635,8 @@ Elm.MushroomCup.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $PlayerList = Elm.PlayerList.make(_elm),
    $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
+   $Signal = Elm.Signal.make(_elm),
+   $Time = Elm.Time.make(_elm);
    var header = A2($Html.div,
    _L.fromArray([$Html$Attributes.$class("row")]),
    _L.fromArray([A2($Html.div,
@@ -4495,7 +4694,7 @@ Elm.MushroomCup.make = function (_elm) {
                  newModel);
               }();}
          _U.badCase($moduleName,
-         "between lines 54 and 76");
+         "between lines 65 and 87");
       }();
    });
    var Global = function (a) {
@@ -4529,15 +4728,7 @@ Elm.MushroomCup.make = function (_elm) {
                                 A2($Signal.forwardTo,
                                 address,
                                 Games),
-                                model.games)]))]))
-                   ,A2($Html.div,
-                   _L.fromArray([$Html$Attributes.$class("row")]),
-                   _L.fromArray([A2($Html.div,
-                   _L.fromArray([$Html$Attributes.$class("col s12")]),
-                   _L.fromArray([A2($Html.hr,
-                                _L.fromArray([]),
-                                _L.fromArray([]))
-                                ,$Html.text($Basics.toString(model))]))]))]));
+                                model.games)]))]))]));
    });
    var NoOp = {ctor: "NoOp"};
    var actions = $Signal.mailbox(NoOp);
@@ -4570,13 +4761,21 @@ Elm.MushroomCup.make = function (_elm) {
       selector,
       filteredActions);
    }());
+   var ticker = A2($Signal.map,
+   function ($) {
+      return Global($Globals.SetTimeGlobal($));
+   },
+   $Time.every($Time.second));
+   var allSignals = A2($Signal.merge,
+   actions.signal,
+   ticker);
    var initialModel = {_: {}
                       ,games: $Games.initialModel
                       ,playerList: $PlayerList.initialModel};
    var model = A3($Signal.foldp,
    update,
    initialModel,
-   actions.signal);
+   allSignals);
    var main = A2($Signal.map,
    view(actions.address),
    model);
@@ -4588,6 +4787,8 @@ Elm.MushroomCup.make = function (_elm) {
    _elm.MushroomCup.values = {_op: _op
                              ,Model: Model
                              ,initialModel: initialModel
+                             ,ticker: ticker
+                             ,allSignals: allSignals
                              ,model: model
                              ,NoOp: NoOp
                              ,PlayerList: PlayerList
@@ -10233,6 +10434,117 @@ Elm.Native.Text.make = function(localRuntime) {
 	};
 };
 
+Elm.Native.Time = {};
+Elm.Native.Time.make = function(localRuntime)
+{
+
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Time = localRuntime.Native.Time || {};
+	if (localRuntime.Native.Time.values)
+	{
+		return localRuntime.Native.Time.values;
+	}
+
+	var NS = Elm.Native.Signal.make(localRuntime);
+	var Maybe = Elm.Maybe.make(localRuntime);
+
+
+	// FRAMES PER SECOND
+
+	function fpsWhen(desiredFPS, isOn)
+	{
+		var msPerFrame = 1000 / desiredFPS;
+		var ticker = NS.input('fps-' + desiredFPS, null);
+
+		function notifyTicker()
+		{
+			localRuntime.notify(ticker.id, null);
+		}
+
+		function firstArg(x, y)
+		{
+			return x;
+		}
+
+		// input fires either when isOn changes, or when ticker fires.
+		// Its value is a tuple with the current timestamp, and the state of isOn
+		var input = NS.timestamp(A3(NS.map2, F2(firstArg), NS.dropRepeats(isOn), ticker));
+
+		var initialState = {
+			isOn: false,
+			time: localRuntime.timer.programStart,
+			delta: 0
+		};
+
+		var timeoutId;
+
+		function update(input,state)
+		{
+			var currentTime = input._0;
+			var isOn = input._1;
+			var wasOn = state.isOn;
+			var previousTime = state.time;
+
+			if (isOn)
+			{
+				timeoutId = localRuntime.setTimeout(notifyTicker, msPerFrame);
+			}
+			else if (wasOn)
+			{
+				clearTimeout(timeoutId);
+			}
+
+			return {
+				isOn: isOn,
+				time: currentTime,
+				delta: (isOn && !wasOn) ? 0 : currentTime - previousTime
+			};
+		}
+
+		return A2(
+			NS.map,
+			function(state) { return state.delta; },
+			A3(NS.foldp, F2(update), update(input.value,initialState), input)
+		);
+	}
+
+
+	// EVERY
+
+	function every(t)
+	{
+		var ticker = NS.input('every-' + t, null);
+		function tellTime()
+		{
+			localRuntime.notify(ticker.id, null);
+		}
+		var clock = A2( NS.map, fst, NS.timestamp(ticker) );
+		setInterval(tellTime, t);
+		return clock;
+	}
+
+
+	function fst(pair)
+	{
+		return pair._0;
+	}
+
+
+	function read(s)
+	{
+		var t = Date.parse(s);
+		return isNaN(t) ? Maybe.Nothing : Maybe.Just(t);
+	}
+
+	return localRuntime.Native.Time.values = {
+		fpsWhen: F2(fpsWhen),
+		every: every,
+		toDate: function(t) { return new window.Date(t); },
+		read: read
+	};
+
+};
+
 Elm.Native.Transform2D = {};
 Elm.Native.Transform2D.make = function(localRuntime) {
 
@@ -12342,7 +12654,7 @@ Elm.PlayerList.make = function (_elm) {
       return function () {
          switch (action.ctor)
          {case "StartTournamentGlobal":
-            return _U.replace([["showAddPlayerView"
+            return _U.replace([["tournamentStarted"
                                ,false]],
               model);}
          return model;
@@ -12467,7 +12779,7 @@ Elm.PlayerList.make = function (_elm) {
             _L.fromArray([A2($Html.div,
             _L.fromArray([]),
             _L.fromArray([$Html.text(str)
-                         ,A2($Html.a,
+                         ,model.tournamentStarted ? A2($Html.a,
                          _L.fromArray([$Html$Attributes.$class("secondary-content")
                                       ,$Html$Attributes.style(_L.fromArray([{ctor: "_Tuple2"
                                                                             ,_0: "cursor"
@@ -12477,12 +12789,12 @@ Elm.PlayerList.make = function (_elm) {
                                       RemovePlayer(str))]),
                          _L.fromArray([A2($Html.i,
                          _L.fromArray([$Html$Attributes.$class("material-icons")]),
-                         _L.fromArray([$Html.text("delete")]))]))]))]));
+                         _L.fromArray([$Html.text("delete")]))])) : $Html.text("")]))]));
          };
          var list = A2($List.map,
          listItem,
          model.players);
-         var listWithHeaderAndFooter = model.showAddPlayerView ? A2($List.append,
+         var listWithHeaderAndFooter = model.tournamentStarted ? A2($List.append,
          A2($List._op["::"],
          listHeader,
          list),
@@ -12498,8 +12810,8 @@ Elm.PlayerList.make = function (_elm) {
                       ,isValidPlayerName: false
                       ,newPlayer: ""
                       ,players: _L.fromArray([])
-                      ,showAddPlayerView: true
-                      ,showErrorInTextField: false};
+                      ,showErrorInTextField: false
+                      ,tournamentStarted: true};
    var Model = F5(function (a,
    b,
    c,
@@ -12509,8 +12821,8 @@ Elm.PlayerList.make = function (_elm) {
              ,isValidPlayerName: c
              ,newPlayer: a
              ,players: b
-             ,showAddPlayerView: e
-             ,showErrorInTextField: d};
+             ,showErrorInTextField: d
+             ,tournamentStarted: e};
    });
    _elm.PlayerList.values = {_op: _op
                             ,initialModel: initialModel
@@ -13607,6 +13919,85 @@ Elm.Text.make = function (_elm) {
                       ,Over: Over
                       ,Through: Through};
    return _elm.Text.values;
+};
+Elm.Time = Elm.Time || {};
+Elm.Time.make = function (_elm) {
+   "use strict";
+   _elm.Time = _elm.Time || {};
+   if (_elm.Time.values)
+   return _elm.Time.values;
+   var _op = {},
+   _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   $moduleName = "Time",
+   $Basics = Elm.Basics.make(_elm),
+   $Native$Signal = Elm.Native.Signal.make(_elm),
+   $Native$Time = Elm.Native.Time.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var delay = $Native$Signal.delay;
+   var since = F2(function (time,
+   signal) {
+      return function () {
+         var stop = A2($Signal.map,
+         $Basics.always(-1),
+         A2(delay,time,signal));
+         var start = A2($Signal.map,
+         $Basics.always(1),
+         signal);
+         var delaydiff = A3($Signal.foldp,
+         F2(function (x,y) {
+            return x + y;
+         }),
+         0,
+         A2($Signal.merge,start,stop));
+         return A2($Signal.map,
+         F2(function (x,y) {
+            return !_U.eq(x,y);
+         })(0),
+         delaydiff);
+      }();
+   });
+   var timestamp = $Native$Signal.timestamp;
+   var every = $Native$Time.every;
+   var fpsWhen = $Native$Time.fpsWhen;
+   var fps = function (targetFrames) {
+      return A2(fpsWhen,
+      targetFrames,
+      $Signal.constant(true));
+   };
+   var inMilliseconds = function (t) {
+      return t;
+   };
+   var millisecond = 1;
+   var second = 1000 * millisecond;
+   var minute = 60 * second;
+   var hour = 60 * minute;
+   var inHours = function (t) {
+      return t / hour;
+   };
+   var inMinutes = function (t) {
+      return t / minute;
+   };
+   var inSeconds = function (t) {
+      return t / second;
+   };
+   _elm.Time.values = {_op: _op
+                      ,millisecond: millisecond
+                      ,second: second
+                      ,minute: minute
+                      ,hour: hour
+                      ,inMilliseconds: inMilliseconds
+                      ,inSeconds: inSeconds
+                      ,inMinutes: inMinutes
+                      ,inHours: inHours
+                      ,fps: fps
+                      ,fpsWhen: fpsWhen
+                      ,every: every
+                      ,timestamp: timestamp
+                      ,delay: delay
+                      ,since: since};
+   return _elm.Time.values;
 };
 Elm.Transform2D = Elm.Transform2D || {};
 Elm.Transform2D.make = function (_elm) {
