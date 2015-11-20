@@ -4,11 +4,9 @@ import PlayerList
 import Games
 
 
-import String
 import Time
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (..)
 
 
 -- Model
@@ -38,7 +36,6 @@ allSignals = Signal.merge actions.signal ticker
 model : Signal Model
 model =
   Signal.foldp update initialModel allSignals
-
 
 
 
@@ -72,7 +69,7 @@ update action model =
         newModel = updateGlobal globalAction model
       in
         { newModel |
-          playerList <- players
+          playerList = players
         }
     Games act ->
       let
@@ -81,7 +78,7 @@ update action model =
         newModel = updateGlobal globalAction model
       in
         { newModel |
-          games <- games
+          games = games
         }
     Global act ->
       updateGlobal act model
@@ -90,8 +87,8 @@ update action model =
 updateGlobal : Globals.GlobalAction -> Model -> Model
 updateGlobal action model =
     { model |
-      games <- Games.updateGlobal action model.games
-    , playerList <- PlayerList.updateGlobal action model.playerList
+      games = Games.updateGlobal action model.games
+    , playerList = PlayerList.updateGlobal action model.playerList
     }
 
 

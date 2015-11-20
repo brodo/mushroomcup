@@ -56,10 +56,10 @@ update action model =
     AddPlayer ->
       if model.isValidPlayerName then
         ( { model |
-            newPlayer <- ""
-          , players <- model.newPlayer :: model.players
-          , isValidPlayerName <- False
-          , showErrorInTextField <- False
+            newPlayer = ""
+          , players = model.newPlayer :: model.players
+          , isValidPlayerName = False
+          , showErrorInTextField = False
           }
           , AddPlayerGlobal model.newPlayer
         )
@@ -67,7 +67,7 @@ update action model =
         (model, NoOpGlobal)
     RemovePlayer player ->
       ( { model |
-         players <- List.filter (\str -> str /= player) model.players
+         players = List.filter (\str -> str /= player) model.players
         }
         , RemovePlayerGlobal player
       )
@@ -78,12 +78,14 @@ update action model =
           trimmedName /= "" && not (List.member trimmedName model.players)
       in
         ( { model |
-            newPlayer <- name
-          , isValidPlayerName <- isValid
-          , showErrorInTextField <- True
+            newPlayer = name
+          , isValidPlayerName = isValid
+          , showErrorInTextField = True
           }
           , NoOpGlobal
         )
+    Global act ->
+      (updateGlobal act model, NoOpGlobal)
 
 
 updateGlobal : GlobalAction -> Model -> Model
@@ -91,7 +93,7 @@ updateGlobal action model =
   case action of
     Globals.StartTournamentGlobal ->
       { model |
-         tournamentStarted <- False
+         tournamentStarted = False
       }
     _ ->
       model

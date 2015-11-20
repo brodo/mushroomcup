@@ -9,7 +9,7 @@ import Html.Attributes exposing (class)
 import Html.Events exposing (..)
 import Random
 import ListUtils
-import Time
+
 
 
 -- Model
@@ -48,11 +48,11 @@ initialModel =
   , randomSeed = Random.initialSeed 4166884
   }
 
-
+maxPlayersPerGame : Int
 maxPlayersPerGame =
   4
 
-
+minPlayersPerGame : Int
 minPlayersPerGame =
   2
 
@@ -80,13 +80,15 @@ update action model =
       (model, NoOpGlobal)
     StartTournament ->
       ( { model |
-         tournamentStarted <- True
-         , games <- (makeGames model.players model.randomSeed)
+         tournamentStarted = True
+         , games = (makeGames model.players model.randomSeed)
         }
         , StartTournamentGlobal)
     StartGame id ->
       ( model
       , NoOpGlobal)
+    Global act ->
+      ( updateGlobal act model, NoOpGlobal)
 
 
 
@@ -109,22 +111,21 @@ makeGames players seed =
 
 
 
-
 -- React to global updates
 updateGlobal : Globals.GlobalAction -> Model -> Model
 updateGlobal action model =
   case action of
     AddPlayerGlobal player ->
       { model |
-        players <- player :: model.players
+        players = player :: model.players
       }
     RemovePlayerGlobal player ->
       { model |
-         players <- List.filter (\str -> str /= player) model.players
+         players = List.filter (\str -> str /= player) model.players
       }
     SetTimeGlobal time ->
       { model |
-        randomSeed <- Random.initialSeed <| truncate time
+        randomSeed = Random.initialSeed <| truncate time
       }
 
     _ ->
