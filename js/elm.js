@@ -11934,6 +11934,25 @@ Elm.Games.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
+   var playerListItem = function (player) {
+      return A2($Html.li,
+      _U.list([$Html$Attributes.$class("collection-item")]),
+      _U.list([$Html.text(player)]));
+   };
+   var finishedGameCard = F2(function (address,game) {
+      return A2($Html.div,
+      _U.list([$Html$Attributes.$class("card blue-grey")]),
+      _U.list([A2($Html.div,
+      _U.list([$Html$Attributes.$class("card-content black-text")]),
+      _U.list([A2($Html.span,
+              _U.list([$Html$Attributes.$class("card-title black-text")]),
+              _U.list([$Html.text(A2($Basics._op["++"],
+              "Game ",
+              $Basics.toString(game.id)))]))
+              ,A2($Html.ul,
+              _U.list([$Html$Attributes.$class("collection")]),
+              A2($List.map,playerListItem,game.players))]))]));
+   });
    var updateGlobal = F2(function (action,model) {
       var _p0 = action;
       switch (_p0.ctor)
@@ -11950,28 +11969,20 @@ Elm.Games.make = function (_elm) {
          default: return model;}
    });
    var Global = function (a) {    return {ctor: "Global",_0: a};};
-   var StartGame = function (a) {
-      return {ctor: "StartGame",_0: a};
+   var StopGame = function (a) {
+      return {ctor: "StopGame",_0: a};
    };
-   var startGameButton = F2(function (address,game) {
-      var startGameButtonClass = game.isRunning ? "disabled" : "";
+   var stopGameButton = F2(function (address,game) {
       return A2($Html.div,
       _U.list([]),
       _U.list([A2($Html.a,
-      _U.list([$Html$Attributes.$class(A2($Basics._op["++"],
-              "waves-effect waves-light btn ",
-              startGameButtonClass))
-              ,A2($Html$Events.onClick,address,StartGame(game.id))]),
-      _U.list([game.isRunning ? $Html.text("Game Finished") : $Html.text("Start Game")]))]));
+      _U.list([$Html$Attributes.$class("waves-effect waves-light btn")
+              ,A2($Html$Events.onClick,address,StopGame(game.id))]),
+      _U.list([$Html.text("Stop Game")]))]));
    });
-   var gameCard = F2(function (address,game) {
-      var playerListItem = function (player) {
-         return A2($Html.li,
-         _U.list([$Html$Attributes.$class("collection-item")]),
-         _U.list([$Html.text(player)]));
-      };
+   var runningGameCard = F2(function (address,game) {
       return A2($Html.div,
-      _U.list([$Html$Attributes.$class("card blue-grey darken-1")]),
+      _U.list([$Html$Attributes.$class("card  pink darken-2")]),
       _U.list([A2($Html.div,
       _U.list([$Html$Attributes.$class("card-content")]),
       _U.list([A2($Html.span,
@@ -11982,7 +11993,40 @@ Elm.Games.make = function (_elm) {
               ,A2($Html.ul,
               _U.list([$Html$Attributes.$class("collection")]),
               A2($List.map,playerListItem,game.players))
+              ,A2(stopGameButton,address,game)]))]));
+   });
+   var StartGame = function (a) {
+      return {ctor: "StartGame",_0: a};
+   };
+   var startGameButton = F2(function (address,game) {
+      return A2($Html.div,
+      _U.list([]),
+      _U.list([A2($Html.a,
+      _U.list([$Html$Attributes.$class("waves-effect waves-light btn")
+              ,A2($Html$Events.onClick,address,StartGame(game.id))]),
+      _U.list([$Html.text("Start Game")]))]));
+   });
+   var newGameCard = F2(function (address,game) {
+      return A2($Html.div,
+      _U.list([$Html$Attributes.$class("card blue-grey lighten-5")]),
+      _U.list([A2($Html.div,
+      _U.list([$Html$Attributes.$class("card-content black-text")]),
+      _U.list([A2($Html.span,
+              _U.list([$Html$Attributes.$class("card-title black-text")]),
+              _U.list([$Html.text(A2($Basics._op["++"],
+              "Game ",
+              $Basics.toString(game.id)))]))
+              ,A2($Html.ul,
+              _U.list([$Html$Attributes.$class("collection")]),
+              A2($List.map,playerListItem,game.players))
               ,A2(startGameButton,address,game)]))]));
+   });
+   var gameCard = F2(function (address,game) {
+      var _p1 = game.state;
+      switch (_p1.ctor)
+      {case "New": return A2(newGameCard,address,game);
+         case "Running": return A2(runningGameCard,address,game);
+         default: return A2(finishedGameCard,address,game);}
    });
    var StartTournament = {ctor: "StartTournament"};
    var startTournamentButton = F2(function (address,model) {
@@ -12017,10 +12061,15 @@ Elm.Games.make = function (_elm) {
              ,tournamentStarted: c
              ,randomSeed: d};
    });
+   var Game = F4(function (a,b,c,d) {
+      return {places: a,state: b,players: c,id: d};
+   });
+   var Finished = {ctor: "Finished"};
+   var Running = {ctor: "Running"};
+   var New = {ctor: "New"};
    var newGame = F2(function (id,players) {
       return {places: _U.list([])
-             ,isFinished: false
-             ,isRunning: false
+             ,state: New
              ,players: players
              ,id: id + 1};
    });
@@ -12040,8 +12089,8 @@ Elm.Games.make = function (_elm) {
       return A2($List.indexedMap,newGame,listOfLists);
    });
    var update = F2(function (action,model) {
-      var _p1 = action;
-      switch (_p1.ctor)
+      var _p2 = action;
+      switch (_p2.ctor)
       {case "NoOp": return {ctor: "_Tuple2"
                            ,_0: model
                            ,_1: $Globals.NoOpGlobal};
@@ -12050,19 +12099,23 @@ Elm.Games.make = function (_elm) {
                                         {tournamentStarted: true
                                         ,games: A2(makeGames,model.players,model.randomSeed)})
                                         ,_1: $Globals.StartTournamentGlobal};
-         case "StartGame": return {ctor: "_Tuple2"
-                                  ,_0: model
-                                  ,_1: $Globals.NoOpGlobal};
+         case "StartGame": var updater = function (game) {
+              return _U.eq(game.id,_p2._0) ? _U.update(game,
+              {state: Running}) : game;
+           };
+           return {ctor: "_Tuple2"
+                  ,_0: _U.update(model,{games: A2($List.map,updater,model.games)})
+                  ,_1: $Globals.NoOpGlobal};
+         case "StopGame": var updater = function (game) {
+              return _U.eq(game.id,_p2._0) ? _U.update(game,
+              {state: Finished}) : game;
+           };
+           return {ctor: "_Tuple2"
+                  ,_0: _U.update(model,{games: A2($List.map,updater,model.games)})
+                  ,_1: $Globals.NoOpGlobal};
          default: return {ctor: "_Tuple2"
-                         ,_0: A2(updateGlobal,_p1._0,model)
+                         ,_0: A2(updateGlobal,_p2._0,model)
                          ,_1: $Globals.NoOpGlobal};}
-   });
-   var Game = F5(function (a,b,c,d,e) {
-      return {places: a
-             ,isFinished: b
-             ,isRunning: c
-             ,players: d
-             ,id: e};
    });
    return _elm.Games.values = {_op: _op
                               ,initialModel: initialModel
@@ -12309,7 +12362,13 @@ Elm.MushroomCup.make = function (_elm) {
                       _U.list([$Html$Attributes.$class("col s8")]),
                       _U.list([A2($Games.view,
                       A2($Signal.forwardTo,address,Games),
-                      model.games)]))]))]));
+                      model.games)]))]))
+              ,A2($Html.div,
+              _U.list([$Html$Attributes.$class("row")]),
+              _U.list([A2($Html.div,
+              _U.list([$Html$Attributes.$class("col s12")]),
+              _U.list([A2($Html.hr,_U.list([]),_U.list([]))
+                      ,$Html.text($Basics.toString(model))]))]))]));
    });
    var NoOp = {ctor: "NoOp"};
    var actions = $Signal.mailbox(NoOp);

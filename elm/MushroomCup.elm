@@ -25,7 +25,6 @@ initialModel =
   }
 
 
-
 ticker : Signal Action
 ticker =
   Signal.map (Global << Globals.SetTimeGlobal) (Time.every Time.second)
@@ -36,7 +35,6 @@ allSignals = Signal.merge actions.signal ticker
 model : Signal Model
 model =
   Signal.foldp update initialModel allSignals
-
 
 
 -- Actions
@@ -106,12 +104,12 @@ view address model =
       , div [class "col s8"]
         [(Games.view (Signal.forwardTo address Games) model.games)]
       ]
-    -- , div [class "row"]
-    --   [ div [class "col s12"]
-    --     [ hr [] []
-    --     , text <| toString model
-    --     ]
-    --   ]
+    , div [class "row"]
+      [ div [class "col s12"]
+        [ hr [] []
+        , text <| toString model
+        ]
+      ]
   ]
 
 

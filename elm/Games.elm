@@ -14,19 +14,26 @@ import ListUtils
 
 -- Model
 
+type alias GameId = Int
+
+type GameState
+  = New
+  | Running
+  | Finished
+
 type alias Game =
   { places : List (Int, String)
-  , isFinished : Bool
-  , isRunning : Bool
+  , state : GameState
   , players : List String
-  , id : Int
+  , id : GameId
   }
+
+
 
 newGame : Int -> List String -> Game
 newGame id players =
   { places = []
-  , isFinished = False
-  , isRunning = False
+  , state = New
   , players = players
   , id = id + 1
   }
@@ -64,6 +71,7 @@ type Action
   = NoOp
   | StartTournament
   | StartGame Int
+  | StopGame Int
   | Global Globals.GlobalAction
 
 
@@ -85,8 +93,28 @@ update action model =
         }
         , StartTournamentGlobal)
     StartGame id ->
-      ( model
-      , NoOpGlobal)
+      let
+        updater game =
+          if game.id == id
+            then { game | state = Running }
+            else game
+      in
+        ( { model |
+            games = List.map updater model.games
+          }
+          , NoOpGlobal)
+    StopGame id ->
+      let
+        updater game =
+          if game.id == id
+            then { game | state = Finished}
+            else game
+      in
+        ( { model |
+            games = List.map updater model.games
+          }
+          , NoOpGlobal)
+
     Global act ->
       ( updateGlobal act model, NoOpGlobal)
 
@@ -162,30 +190,67 @@ startTournamentButton address model =
 
 gameCard : Signal.Address Action -> Game -> Html
 gameCard address game =
-  let
-    playerListItem player =
-      li [class "collection-item"] [text player]
-  in
-  div [ class "card blue-grey darken-1" ]
-    [ div [class "card-content"]
-      [ span [class "card-title"] [text <| "Game " ++ (toString game.id)]
+  case game.state of
+    New ->
+      newGameCard address game
+    Running ->
+      runningGameCard address game
+    Finished ->
+      finishedGameCard address game
+
+playerListItem : String -> Html
+playerListItem player =
+  li [class "collection-item"] [text player]
+
+
+newGameCard : Signal.Address Action -> Game -> Html
+newGameCard address game =
+  div [ class "card blue-grey lighten-5"]
+    [ div [class "card-content black-text" ]
+      [ span [class "card-title black-text"]
+          [text <| "Game " ++ (toString game.id) ]
       ,  ul [class "collection"] (List.map playerListItem game.players)
       , startGameButton address game
       ]
     ]
 
+
+runningGameCard : Signal.Address Action -> Game -> Html
+runningGameCard address game =
+  div [ class  "card  pink darken-2"]
+    [ div [class "card-content" ]
+      [ span [class "card-title"]
+          [text <| "Game " ++ (toString game.id) ]
+      ,  ul [class "collection"] (List.map playerListItem game.players)
+      , stopGameButton address game
+      ]
+    ]
+
+
+finishedGameCard : Signal.Address Action -> Game -> Html
+finishedGameCard address game =
+  div [ class "card blue-grey"]
+    [ div [class "card-content black-text" ]
+      [ span [class "card-title black-text"]
+          [text <| "Game " ++ (toString game.id) ]
+      ,  ul [class "collection"] (List.map playerListItem game.players)
+      ]
+    ]
+
+
 startGameButton : Signal.Address Action -> Game -> Html
 startGameButton address game =
-  let
-    startGameButtonClass =
-      if game.isRunning
-        then "disabled"
-        else ""
-  in
-    div [][
-      a [ class ("waves-effect waves-light btn " ++ startGameButtonClass)
-        , onClick address (StartGame game.id)
-        ] [if game.isRunning
-            then text "Game Finished"
-            else text "Start Game"]
-    ]
+  div [][
+    a [ class ("waves-effect waves-light btn")
+      , onClick address (StartGame game.id)
+      ] [text "Start Game"]
+  ]
+
+
+stopGameButton : Signal.Address Action -> Game -> Html
+stopGameButton address game =
+  div [][
+    a [ class ("waves-effect waves-light btn")
+      , onClick address (StopGame game.id)
+      ] [text "Stop Game"]
+  ]

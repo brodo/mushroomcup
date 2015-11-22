@@ -2,6 +2,7 @@ module ListUtils (shuffle, divide, divideInto) where
 import Random
 import List exposing (..)
 
+
 -- Shuffle a list
 shuffle : List a -> Random.Seed -> List a
 shuffle list seed =
