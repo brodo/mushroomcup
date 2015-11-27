@@ -57,7 +57,7 @@ update action model =
       if model.isValidPlayerName then
         ( { model |
             newPlayer = ""
-          , players = model.newPlayer :: model.players
+          , players = List.append model.players [model.newPlayer]
           , isValidPlayerName = False
           , showErrorInTextField = False
           }
@@ -104,8 +104,13 @@ updateGlobal action model =
 view : Signal.Address Action -> Model -> Html
 view address model =
   let
-    listItem str =
-      li [class "collection-item"]
+    numberOfPlayers = List.length model.players
+    animationClass index =
+      if index == numberOfPlayers - 1
+        then "animated slideInLeft"
+        else ""
+    listItem index str =
+      li [class <| "collection-item " ++ animationClass index]
         [div []
           [
           text str
@@ -123,7 +128,7 @@ view address model =
     listHeader =
       li [class "collection-header"] [h5 [] [text "Players"]]
     list =
-      List.map listItem model.players
+      List.indexedMap listItem model.players
     listWithHeaderAndFooter =
       if model.tournamentStarted
         then List.append (listHeader :: list) [(addPlayerView address model)]

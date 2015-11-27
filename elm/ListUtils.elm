@@ -1,6 +1,19 @@
-module ListUtils (shuffle, divide, divideInto) where
+module ListUtils (shuffle, divide, divideInto, selectMap) where
 import Random
 import List exposing (..)
+
+
+
+-- Map over all items in list, but only change those wich match the predicate
+selectMap : (a -> Bool) -> (a -> a) -> List a -> List a
+selectMap predicate transform list =
+  let
+    updater item =
+      if predicate item
+        then transform item
+        else item
+  in
+    List.map updater list
 
 
 -- Shuffle a list

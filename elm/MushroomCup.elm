@@ -1,7 +1,7 @@
 module MushroomCup where
 import Globals
 import PlayerList
-import Games
+import Tournament
 
 
 import Time
@@ -14,14 +14,14 @@ import Html.Attributes exposing (..)
 
 type alias Model =
   { playerList : PlayerList.Model
-  , games : Games.Model
+  , games : Tournament.Model
   }
 
 
 initialModel : Model
 initialModel =
   { playerList = PlayerList.initialModel
-  , games = Games.initialModel
+  , games = Tournament.initialModel
   }
 
 
@@ -43,7 +43,7 @@ model =
 type Action =
   NoOp
   | PlayerList PlayerList.Action
-  | Games Games.Action
+  | GameList Tournament.Action
   | Global Globals.GlobalAction
 
 
@@ -69,10 +69,10 @@ update action model =
         { newModel |
           playerList = players
         }
-    Games act ->
+    GameList act ->
       let
         (games, globalAction) =
-          Games.update act model.games
+          Tournament.update act model.games
         newModel = updateGlobal globalAction model
       in
         { newModel |
@@ -85,7 +85,7 @@ update action model =
 updateGlobal : Globals.GlobalAction -> Model -> Model
 updateGlobal action model =
     { model |
-      games = Games.updateGlobal action model.games
+      games = Tournament.updateGlobal action model.games
     , playerList = PlayerList.updateGlobal action model.playerList
     }
 
@@ -102,7 +102,7 @@ view address model =
       [ div [class "col s4"]
         [(PlayerList.view (Signal.forwardTo address PlayerList) model.playerList)]
       , div [class "col s8"]
-        [(Games.view (Signal.forwardTo address Games) model.games)]
+        [(Tournament.view (Signal.forwardTo address GameList) model.games)]
       ]
     , div [class "row"]
       [ div [class "col s12"]

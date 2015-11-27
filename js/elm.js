@@ -6027,202 +6027,370 @@ Elm.Signal.make = function (_elm) {
                                ,forwardTo: forwardTo
                                ,Mailbox: Mailbox};
 };
-Elm.Native.Time = {};
-
-Elm.Native.Time.make = function(localRuntime)
-{
-	localRuntime.Native = localRuntime.Native || {};
-	localRuntime.Native.Time = localRuntime.Native.Time || {};
-	if (localRuntime.Native.Time.values)
-	{
-		return localRuntime.Native.Time.values;
-	}
-
-	var NS = Elm.Native.Signal.make(localRuntime);
-	var Maybe = Elm.Maybe.make(localRuntime);
-
-
-	// FRAMES PER SECOND
-
-	function fpsWhen(desiredFPS, isOn)
-	{
-		var msPerFrame = 1000 / desiredFPS;
-		var ticker = NS.input('fps-' + desiredFPS, null);
-
-		function notifyTicker()
-		{
-			localRuntime.notify(ticker.id, null);
-		}
-
-		function firstArg(x, y)
-		{
-			return x;
-		}
-
-		// input fires either when isOn changes, or when ticker fires.
-		// Its value is a tuple with the current timestamp, and the state of isOn
-		var input = NS.timestamp(A3(NS.map2, F2(firstArg), NS.dropRepeats(isOn), ticker));
-
-		var initialState = {
-			isOn: false,
-			time: localRuntime.timer.programStart,
-			delta: 0
-		};
-
-		var timeoutId;
-
-		function update(input, state)
-		{
-			var currentTime = input._0;
-			var isOn = input._1;
-			var wasOn = state.isOn;
-			var previousTime = state.time;
-
-			if (isOn)
-			{
-				timeoutId = localRuntime.setTimeout(notifyTicker, msPerFrame);
-			}
-			else if (wasOn)
-			{
-				clearTimeout(timeoutId);
-			}
-
-			return {
-				isOn: isOn,
-				time: currentTime,
-				delta: (isOn && !wasOn) ? 0 : currentTime - previousTime
-			};
-		}
-
-		return A2(
-			NS.map,
-			function(state) { return state.delta; },
-			A3(NS.foldp, F2(update), update(input.value, initialState), input)
-		);
-	}
-
-
-	// EVERY
-
-	function every(t)
-	{
-		var ticker = NS.input('every-' + t, null);
-		function tellTime()
-		{
-			localRuntime.notify(ticker.id, null);
-		}
-		var clock = A2(NS.map, fst, NS.timestamp(ticker));
-		setInterval(tellTime, t);
-		return clock;
-	}
-
-
-	function fst(pair)
-	{
-		return pair._0;
-	}
-
-
-	function read(s)
-	{
-		var t = Date.parse(s);
-		return isNaN(t) ? Maybe.Nothing : Maybe.Just(t);
-	}
-
-	return localRuntime.Native.Time.values = {
-		fpsWhen: F2(fpsWhen),
-		every: every,
-		toDate: function(t) { return new Date(t); },
-		read: read
-	};
-};
-
-Elm.Time = Elm.Time || {};
-Elm.Time.make = function (_elm) {
+Elm.Random = Elm.Random || {};
+Elm.Random.make = function (_elm) {
    "use strict";
-   _elm.Time = _elm.Time || {};
-   if (_elm.Time.values) return _elm.Time.values;
+   _elm.Random = _elm.Random || {};
+   if (_elm.Random.values) return _elm.Random.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
-   $Native$Signal = Elm.Native.Signal.make(_elm),
-   $Native$Time = Elm.Native.Time.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
+   $List = Elm.List.make(_elm);
    var _op = {};
-   var delay = $Native$Signal.delay;
-   var since = F2(function (time,signal) {
-      var stop = A2($Signal.map,
-      $Basics.always(-1),
-      A2(delay,time,signal));
-      var start = A2($Signal.map,$Basics.always(1),signal);
-      var delaydiff = A3($Signal.foldp,
-      F2(function (x,y) {    return x + y;}),
-      0,
-      A2($Signal.merge,start,stop));
-      return A2($Signal.map,
-      F2(function (x,y) {    return !_U.eq(x,y);})(0),
-      delaydiff);
-   });
-   var timestamp = $Native$Signal.timestamp;
-   var every = $Native$Time.every;
-   var fpsWhen = $Native$Time.fpsWhen;
-   var fps = function (targetFrames) {
-      return A2(fpsWhen,targetFrames,$Signal.constant(true));
+   var magicNum8 = 2147483562;
+   var range = function (_p0) {
+      return {ctor: "_Tuple2",_0: 0,_1: magicNum8};
    };
-   var inMilliseconds = function (t) {    return t;};
-   var millisecond = 1;
-   var second = 1000 * millisecond;
-   var minute = 60 * second;
-   var hour = 60 * minute;
-   var inHours = function (t) {    return t / hour;};
-   var inMinutes = function (t) {    return t / minute;};
-   var inSeconds = function (t) {    return t / second;};
-   return _elm.Time.values = {_op: _op
-                             ,millisecond: millisecond
-                             ,second: second
-                             ,minute: minute
-                             ,hour: hour
-                             ,inMilliseconds: inMilliseconds
-                             ,inSeconds: inSeconds
-                             ,inMinutes: inMinutes
-                             ,inHours: inHours
-                             ,fps: fps
-                             ,fpsWhen: fpsWhen
-                             ,every: every
-                             ,timestamp: timestamp
-                             ,delay: delay
-                             ,since: since};
+   var magicNum7 = 2137383399;
+   var magicNum6 = 2147483563;
+   var magicNum5 = 3791;
+   var magicNum4 = 40692;
+   var magicNum3 = 52774;
+   var magicNum2 = 12211;
+   var magicNum1 = 53668;
+   var magicNum0 = 40014;
+   var generate = F2(function (_p1,seed) {
+      var _p2 = _p1;
+      return _p2._0(seed);
+   });
+   var Seed = function (a) {    return {ctor: "Seed",_0: a};};
+   var State = F2(function (a,b) {
+      return {ctor: "State",_0: a,_1: b};
+   });
+   var initState = function (s$) {
+      var s = A2($Basics.max,s$,0 - s$);
+      var q = s / (magicNum6 - 1) | 0;
+      var s2 = A2($Basics._op["%"],q,magicNum7 - 1);
+      var s1 = A2($Basics._op["%"],s,magicNum6 - 1);
+      return A2(State,s1 + 1,s2 + 1);
+   };
+   var next = function (_p3) {
+      var _p4 = _p3;
+      var _p6 = _p4._1;
+      var _p5 = _p4._0;
+      var k$ = _p6 / magicNum3 | 0;
+      var s2$ = magicNum4 * (_p6 - k$ * magicNum3) - k$ * magicNum5;
+      var s2$$ = _U.cmp(s2$,0) < 0 ? s2$ + magicNum7 : s2$;
+      var k = _p5 / magicNum1 | 0;
+      var s1$ = magicNum0 * (_p5 - k * magicNum1) - k * magicNum2;
+      var s1$$ = _U.cmp(s1$,0) < 0 ? s1$ + magicNum6 : s1$;
+      var z = s1$$ - s2$$;
+      var z$ = _U.cmp(z,1) < 0 ? z + magicNum8 : z;
+      return {ctor: "_Tuple2",_0: z$,_1: A2(State,s1$$,s2$$)};
+   };
+   var split = function (_p7) {
+      var _p8 = _p7;
+      var _p11 = _p8._1;
+      var _p10 = _p8._0;
+      var _p9 = $Basics.snd(next(_p8));
+      var t1 = _p9._0;
+      var t2 = _p9._1;
+      var new_s2 = _U.eq(_p11,1) ? magicNum7 - 1 : _p11 - 1;
+      var new_s1 = _U.eq(_p10,magicNum6 - 1) ? 1 : _p10 + 1;
+      return {ctor: "_Tuple2"
+             ,_0: A2(State,new_s1,t2)
+             ,_1: A2(State,t1,new_s2)};
+   };
+   var initialSeed = function (n) {
+      return Seed({state: initState(n)
+                  ,next: next
+                  ,split: split
+                  ,range: range});
+   };
+   var Generator = function (a) {
+      return {ctor: "Generator",_0: a};
+   };
+   var andThen = F2(function (_p12,callback) {
+      var _p13 = _p12;
+      return Generator(function (seed) {
+         var _p14 = _p13._0(seed);
+         var result = _p14._0;
+         var newSeed = _p14._1;
+         var _p15 = callback(result);
+         var genB = _p15._0;
+         return genB(newSeed);
+      });
+   });
+   var map5 = F6(function (func,_p20,_p19,_p18,_p17,_p16) {
+      var _p21 = _p20;
+      var _p22 = _p19;
+      var _p23 = _p18;
+      var _p24 = _p17;
+      var _p25 = _p16;
+      return Generator(function (seed0) {
+         var _p26 = _p21._0(seed0);
+         var a = _p26._0;
+         var seed1 = _p26._1;
+         var _p27 = _p22._0(seed1);
+         var b = _p27._0;
+         var seed2 = _p27._1;
+         var _p28 = _p23._0(seed2);
+         var c = _p28._0;
+         var seed3 = _p28._1;
+         var _p29 = _p24._0(seed3);
+         var d = _p29._0;
+         var seed4 = _p29._1;
+         var _p30 = _p25._0(seed4);
+         var e = _p30._0;
+         var seed5 = _p30._1;
+         return {ctor: "_Tuple2",_0: A5(func,a,b,c,d,e),_1: seed5};
+      });
+   });
+   var map4 = F5(function (func,_p34,_p33,_p32,_p31) {
+      var _p35 = _p34;
+      var _p36 = _p33;
+      var _p37 = _p32;
+      var _p38 = _p31;
+      return Generator(function (seed0) {
+         var _p39 = _p35._0(seed0);
+         var a = _p39._0;
+         var seed1 = _p39._1;
+         var _p40 = _p36._0(seed1);
+         var b = _p40._0;
+         var seed2 = _p40._1;
+         var _p41 = _p37._0(seed2);
+         var c = _p41._0;
+         var seed3 = _p41._1;
+         var _p42 = _p38._0(seed3);
+         var d = _p42._0;
+         var seed4 = _p42._1;
+         return {ctor: "_Tuple2",_0: A4(func,a,b,c,d),_1: seed4};
+      });
+   });
+   var map3 = F4(function (func,_p45,_p44,_p43) {
+      var _p46 = _p45;
+      var _p47 = _p44;
+      var _p48 = _p43;
+      return Generator(function (seed0) {
+         var _p49 = _p46._0(seed0);
+         var a = _p49._0;
+         var seed1 = _p49._1;
+         var _p50 = _p47._0(seed1);
+         var b = _p50._0;
+         var seed2 = _p50._1;
+         var _p51 = _p48._0(seed2);
+         var c = _p51._0;
+         var seed3 = _p51._1;
+         return {ctor: "_Tuple2",_0: A3(func,a,b,c),_1: seed3};
+      });
+   });
+   var map2 = F3(function (func,_p53,_p52) {
+      var _p54 = _p53;
+      var _p55 = _p52;
+      return Generator(function (seed0) {
+         var _p56 = _p54._0(seed0);
+         var a = _p56._0;
+         var seed1 = _p56._1;
+         var _p57 = _p55._0(seed1);
+         var b = _p57._0;
+         var seed2 = _p57._1;
+         return {ctor: "_Tuple2",_0: A2(func,a,b),_1: seed2};
+      });
+   });
+   var map = F2(function (func,_p58) {
+      var _p59 = _p58;
+      return Generator(function (seed0) {
+         var _p60 = _p59._0(seed0);
+         var a = _p60._0;
+         var seed1 = _p60._1;
+         return {ctor: "_Tuple2",_0: func(a),_1: seed1};
+      });
+   });
+   var listHelp = F4(function (list,n,generate,seed) {
+      listHelp: while (true) if (_U.cmp(n,1) < 0)
+      return {ctor: "_Tuple2",_0: $List.reverse(list),_1: seed};
+      else {
+            var _p61 = generate(seed);
+            var value = _p61._0;
+            var newSeed = _p61._1;
+            var _v19 = A2($List._op["::"],value,list),
+            _v20 = n - 1,
+            _v21 = generate,
+            _v22 = newSeed;
+            list = _v19;
+            n = _v20;
+            generate = _v21;
+            seed = _v22;
+            continue listHelp;
+         }
+   });
+   var list = F2(function (n,_p62) {
+      var _p63 = _p62;
+      return Generator(function (seed) {
+         return A4(listHelp,_U.list([]),n,_p63._0,seed);
+      });
+   });
+   var pair = F2(function (genA,genB) {
+      return A3(map2,
+      F2(function (v0,v1) {
+         return {ctor: "_Tuple2",_0: v0,_1: v1};
+      }),
+      genA,
+      genB);
+   });
+   var minInt = -2147483648;
+   var maxInt = 2147483647;
+   var iLogBase = F2(function (b,i) {
+      return _U.cmp(i,b) < 0 ? 1 : 1 + A2(iLogBase,b,i / b | 0);
+   });
+   var $int = F2(function (a,b) {
+      return Generator(function (_p64) {
+         var _p65 = _p64;
+         var _p70 = _p65._0;
+         var base = 2147483561;
+         var f = F3(function (n,acc,state) {
+            f: while (true) {
+               var _p66 = n;
+               if (_p66 === 0) {
+                     return {ctor: "_Tuple2",_0: acc,_1: state};
+                  } else {
+                     var _p67 = _p70.next(state);
+                     var x = _p67._0;
+                     var state$ = _p67._1;
+                     var _v26 = n - 1,_v27 = x + acc * base,_v28 = state$;
+                     n = _v26;
+                     acc = _v27;
+                     state = _v28;
+                     continue f;
+                  }
+            }
+         });
+         var _p68 = _U.cmp(a,b) < 0 ? {ctor: "_Tuple2"
+                                      ,_0: a
+                                      ,_1: b} : {ctor: "_Tuple2",_0: b,_1: a};
+         var lo = _p68._0;
+         var hi = _p68._1;
+         var k = hi - lo + 1;
+         var n = A2(iLogBase,base,k);
+         var _p69 = A3(f,n,1,_p70.state);
+         var v = _p69._0;
+         var state$ = _p69._1;
+         return {ctor: "_Tuple2"
+                ,_0: lo + A2($Basics._op["%"],v,k)
+                ,_1: Seed(_U.update(_p70,{state: state$}))};
+      });
+   });
+   var $float = F2(function (a,b) {
+      return Generator(function (seed) {
+         var _p71 = A2(generate,A2($int,minInt,maxInt),seed);
+         var number = _p71._0;
+         var newSeed = _p71._1;
+         var negativeOneToOne = $Basics.toFloat(number) / $Basics.toFloat(maxInt - minInt);
+         var _p72 = _U.cmp(a,b) < 0 ? {ctor: "_Tuple2"
+                                      ,_0: a
+                                      ,_1: b} : {ctor: "_Tuple2",_0: b,_1: a};
+         var lo = _p72._0;
+         var hi = _p72._1;
+         var scaled = (lo + hi) / 2 + (hi - lo) * negativeOneToOne;
+         return {ctor: "_Tuple2",_0: scaled,_1: newSeed};
+      });
+   });
+   var bool = A2(map,
+   F2(function (x,y) {    return _U.eq(x,y);})(1),
+   A2($int,0,1));
+   return _elm.Random.values = {_op: _op
+                               ,bool: bool
+                               ,$int: $int
+                               ,$float: $float
+                               ,list: list
+                               ,pair: pair
+                               ,map: map
+                               ,map2: map2
+                               ,map3: map3
+                               ,map4: map4
+                               ,map5: map5
+                               ,andThen: andThen
+                               ,minInt: minInt
+                               ,maxInt: maxInt
+                               ,generate: generate
+                               ,initialSeed: initialSeed};
 };
-Elm.Globals = Elm.Globals || {};
-Elm.Globals.make = function (_elm) {
+Elm.ListUtils = Elm.ListUtils || {};
+Elm.ListUtils.make = function (_elm) {
    "use strict";
-   _elm.Globals = _elm.Globals || {};
-   if (_elm.Globals.values) return _elm.Globals.values;
+   _elm.ListUtils = _elm.ListUtils || {};
+   if (_elm.ListUtils.values) return _elm.ListUtils.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
+   $Random = Elm.Random.make(_elm),
    $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm),
-   $Time = Elm.Time.make(_elm);
+   $Signal = Elm.Signal.make(_elm);
    var _op = {};
-   var SetTimeGlobal = function (a) {
-      return {ctor: "SetTimeGlobal",_0: a};
-   };
-   var StartTournamentGlobal = {ctor: "StartTournamentGlobal"};
-   var RemovePlayerGlobal = function (a) {
-      return {ctor: "RemovePlayerGlobal",_0: a};
-   };
-   var AddPlayerGlobal = function (a) {
-      return {ctor: "AddPlayerGlobal",_0: a};
-   };
-   var NoOpGlobal = {ctor: "NoOpGlobal"};
-   return _elm.Globals.values = {_op: _op
-                                ,NoOpGlobal: NoOpGlobal
-                                ,AddPlayerGlobal: AddPlayerGlobal
-                                ,RemovePlayerGlobal: RemovePlayerGlobal
-                                ,StartTournamentGlobal: StartTournamentGlobal
-                                ,SetTimeGlobal: SetTimeGlobal};
+   var addToFront = F3(function (count,current,list) {
+      var tl = A2($Maybe.withDefault,_U.list([]),$List.tail(list));
+      var hd = A2($Maybe.withDefault,_U.list([]),$List.head(list));
+      return _U.cmp($List.length(hd),count) > -1 ? A2($List._op["::"],
+      _U.list([current]),
+      list) : A2($List._op["::"],A2($List._op["::"],current,hd),tl);
+   });
+   var divideInto = F2(function (list,numberOfSublists) {
+      var listLength = $List.length(list);
+      var targetSize = $List.length(list) / numberOfSublists | 0;
+      var listOfLists = A3($List.foldl,
+      addToFront(targetSize),
+      _U.list([]),
+      list);
+      var hasAdditionalElements = _U.cmp($List.length(listOfLists),
+      numberOfSublists) > 0;
+      if (hasAdditionalElements) {
+            var addAdditionals = F2(function (additional,list) {
+               var _p0 = additional;
+               if (_p0.ctor === "Just") {
+                     return A2($List._op["::"],_p0._0,list);
+                  } else {
+                     return list;
+                  }
+            });
+            var normalSublists = A2($Maybe.withDefault,
+            _U.list([]),
+            $List.tail(listOfLists));
+            var additionalElements = A2($Maybe.withDefault,
+            _U.list([]),
+            $List.head(listOfLists));
+            var numberOfAdditionalElements = $List.length(additionalElements);
+            var nothings = A2($List.repeat,
+            listLength - numberOfAdditionalElements,
+            $Maybe.Nothing);
+            var justs = A2($List.map,$Maybe.Just,additionalElements);
+            var additionals = A2($List.append,justs,nothings);
+            return A3($List.map2,addAdditionals,additionals,normalSublists);
+         } else return listOfLists;
+   });
+   var divide = F2(function (list,size) {
+      return A3($List.foldl,addToFront(size),_U.list([]),list);
+   });
+   var shuffle = F2(function (list,seed) {
+      var listLength = $List.length(list);
+      var randomListGenerator = A2($Random.list,
+      listLength,
+      A2($Random.$float,0,10));
+      var randomList = $Basics.fst(A2($Random.generate,
+      randomListGenerator,
+      seed));
+      var listOfPairs = A3($List.map2,
+      F2(function (v0,v1) {
+         return {ctor: "_Tuple2",_0: v0,_1: v1};
+      }),
+      randomList,
+      list);
+      var listOfSortedPairs = A2($List.sortBy,
+      $Basics.fst,
+      listOfPairs);
+      return A2($List.map,$Basics.snd,listOfSortedPairs);
+   });
+   var selectMap = F3(function (predicate,transform,list) {
+      var updater = function (item) {
+         return predicate(item) ? transform(item) : item;
+      };
+      return A2($List.map,updater,list);
+   });
+   return _elm.ListUtils.values = {_op: _op
+                                  ,shuffle: shuffle
+                                  ,divide: divide
+                                  ,divideInto: divideInto
+                                  ,selectMap: selectMap};
 };
 Elm.Native.Json = {};
 
@@ -11557,373 +11725,14 @@ Elm.Html.Events.make = function (_elm) {
                                     ,keyCode: keyCode
                                     ,Options: Options};
 };
-Elm.Random = Elm.Random || {};
-Elm.Random.make = function (_elm) {
+Elm.GameList = Elm.GameList || {};
+Elm.GameList.make = function (_elm) {
    "use strict";
-   _elm.Random = _elm.Random || {};
-   if (_elm.Random.values) return _elm.Random.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $List = Elm.List.make(_elm);
-   var _op = {};
-   var magicNum8 = 2147483562;
-   var range = function (_p0) {
-      return {ctor: "_Tuple2",_0: 0,_1: magicNum8};
-   };
-   var magicNum7 = 2137383399;
-   var magicNum6 = 2147483563;
-   var magicNum5 = 3791;
-   var magicNum4 = 40692;
-   var magicNum3 = 52774;
-   var magicNum2 = 12211;
-   var magicNum1 = 53668;
-   var magicNum0 = 40014;
-   var generate = F2(function (_p1,seed) {
-      var _p2 = _p1;
-      return _p2._0(seed);
-   });
-   var Seed = function (a) {    return {ctor: "Seed",_0: a};};
-   var State = F2(function (a,b) {
-      return {ctor: "State",_0: a,_1: b};
-   });
-   var initState = function (s$) {
-      var s = A2($Basics.max,s$,0 - s$);
-      var q = s / (magicNum6 - 1) | 0;
-      var s2 = A2($Basics._op["%"],q,magicNum7 - 1);
-      var s1 = A2($Basics._op["%"],s,magicNum6 - 1);
-      return A2(State,s1 + 1,s2 + 1);
-   };
-   var next = function (_p3) {
-      var _p4 = _p3;
-      var _p6 = _p4._1;
-      var _p5 = _p4._0;
-      var k$ = _p6 / magicNum3 | 0;
-      var s2$ = magicNum4 * (_p6 - k$ * magicNum3) - k$ * magicNum5;
-      var s2$$ = _U.cmp(s2$,0) < 0 ? s2$ + magicNum7 : s2$;
-      var k = _p5 / magicNum1 | 0;
-      var s1$ = magicNum0 * (_p5 - k * magicNum1) - k * magicNum2;
-      var s1$$ = _U.cmp(s1$,0) < 0 ? s1$ + magicNum6 : s1$;
-      var z = s1$$ - s2$$;
-      var z$ = _U.cmp(z,1) < 0 ? z + magicNum8 : z;
-      return {ctor: "_Tuple2",_0: z$,_1: A2(State,s1$$,s2$$)};
-   };
-   var split = function (_p7) {
-      var _p8 = _p7;
-      var _p11 = _p8._1;
-      var _p10 = _p8._0;
-      var _p9 = $Basics.snd(next(_p8));
-      var t1 = _p9._0;
-      var t2 = _p9._1;
-      var new_s2 = _U.eq(_p11,1) ? magicNum7 - 1 : _p11 - 1;
-      var new_s1 = _U.eq(_p10,magicNum6 - 1) ? 1 : _p10 + 1;
-      return {ctor: "_Tuple2"
-             ,_0: A2(State,new_s1,t2)
-             ,_1: A2(State,t1,new_s2)};
-   };
-   var initialSeed = function (n) {
-      return Seed({state: initState(n)
-                  ,next: next
-                  ,split: split
-                  ,range: range});
-   };
-   var Generator = function (a) {
-      return {ctor: "Generator",_0: a};
-   };
-   var andThen = F2(function (_p12,callback) {
-      var _p13 = _p12;
-      return Generator(function (seed) {
-         var _p14 = _p13._0(seed);
-         var result = _p14._0;
-         var newSeed = _p14._1;
-         var _p15 = callback(result);
-         var genB = _p15._0;
-         return genB(newSeed);
-      });
-   });
-   var map5 = F6(function (func,_p20,_p19,_p18,_p17,_p16) {
-      var _p21 = _p20;
-      var _p22 = _p19;
-      var _p23 = _p18;
-      var _p24 = _p17;
-      var _p25 = _p16;
-      return Generator(function (seed0) {
-         var _p26 = _p21._0(seed0);
-         var a = _p26._0;
-         var seed1 = _p26._1;
-         var _p27 = _p22._0(seed1);
-         var b = _p27._0;
-         var seed2 = _p27._1;
-         var _p28 = _p23._0(seed2);
-         var c = _p28._0;
-         var seed3 = _p28._1;
-         var _p29 = _p24._0(seed3);
-         var d = _p29._0;
-         var seed4 = _p29._1;
-         var _p30 = _p25._0(seed4);
-         var e = _p30._0;
-         var seed5 = _p30._1;
-         return {ctor: "_Tuple2",_0: A5(func,a,b,c,d,e),_1: seed5};
-      });
-   });
-   var map4 = F5(function (func,_p34,_p33,_p32,_p31) {
-      var _p35 = _p34;
-      var _p36 = _p33;
-      var _p37 = _p32;
-      var _p38 = _p31;
-      return Generator(function (seed0) {
-         var _p39 = _p35._0(seed0);
-         var a = _p39._0;
-         var seed1 = _p39._1;
-         var _p40 = _p36._0(seed1);
-         var b = _p40._0;
-         var seed2 = _p40._1;
-         var _p41 = _p37._0(seed2);
-         var c = _p41._0;
-         var seed3 = _p41._1;
-         var _p42 = _p38._0(seed3);
-         var d = _p42._0;
-         var seed4 = _p42._1;
-         return {ctor: "_Tuple2",_0: A4(func,a,b,c,d),_1: seed4};
-      });
-   });
-   var map3 = F4(function (func,_p45,_p44,_p43) {
-      var _p46 = _p45;
-      var _p47 = _p44;
-      var _p48 = _p43;
-      return Generator(function (seed0) {
-         var _p49 = _p46._0(seed0);
-         var a = _p49._0;
-         var seed1 = _p49._1;
-         var _p50 = _p47._0(seed1);
-         var b = _p50._0;
-         var seed2 = _p50._1;
-         var _p51 = _p48._0(seed2);
-         var c = _p51._0;
-         var seed3 = _p51._1;
-         return {ctor: "_Tuple2",_0: A3(func,a,b,c),_1: seed3};
-      });
-   });
-   var map2 = F3(function (func,_p53,_p52) {
-      var _p54 = _p53;
-      var _p55 = _p52;
-      return Generator(function (seed0) {
-         var _p56 = _p54._0(seed0);
-         var a = _p56._0;
-         var seed1 = _p56._1;
-         var _p57 = _p55._0(seed1);
-         var b = _p57._0;
-         var seed2 = _p57._1;
-         return {ctor: "_Tuple2",_0: A2(func,a,b),_1: seed2};
-      });
-   });
-   var map = F2(function (func,_p58) {
-      var _p59 = _p58;
-      return Generator(function (seed0) {
-         var _p60 = _p59._0(seed0);
-         var a = _p60._0;
-         var seed1 = _p60._1;
-         return {ctor: "_Tuple2",_0: func(a),_1: seed1};
-      });
-   });
-   var listHelp = F4(function (list,n,generate,seed) {
-      listHelp: while (true) if (_U.cmp(n,1) < 0)
-      return {ctor: "_Tuple2",_0: $List.reverse(list),_1: seed};
-      else {
-            var _p61 = generate(seed);
-            var value = _p61._0;
-            var newSeed = _p61._1;
-            var _v19 = A2($List._op["::"],value,list),
-            _v20 = n - 1,
-            _v21 = generate,
-            _v22 = newSeed;
-            list = _v19;
-            n = _v20;
-            generate = _v21;
-            seed = _v22;
-            continue listHelp;
-         }
-   });
-   var list = F2(function (n,_p62) {
-      var _p63 = _p62;
-      return Generator(function (seed) {
-         return A4(listHelp,_U.list([]),n,_p63._0,seed);
-      });
-   });
-   var pair = F2(function (genA,genB) {
-      return A3(map2,
-      F2(function (v0,v1) {
-         return {ctor: "_Tuple2",_0: v0,_1: v1};
-      }),
-      genA,
-      genB);
-   });
-   var minInt = -2147483648;
-   var maxInt = 2147483647;
-   var iLogBase = F2(function (b,i) {
-      return _U.cmp(i,b) < 0 ? 1 : 1 + A2(iLogBase,b,i / b | 0);
-   });
-   var $int = F2(function (a,b) {
-      return Generator(function (_p64) {
-         var _p65 = _p64;
-         var _p70 = _p65._0;
-         var base = 2147483561;
-         var f = F3(function (n,acc,state) {
-            f: while (true) {
-               var _p66 = n;
-               if (_p66 === 0) {
-                     return {ctor: "_Tuple2",_0: acc,_1: state};
-                  } else {
-                     var _p67 = _p70.next(state);
-                     var x = _p67._0;
-                     var state$ = _p67._1;
-                     var _v26 = n - 1,_v27 = x + acc * base,_v28 = state$;
-                     n = _v26;
-                     acc = _v27;
-                     state = _v28;
-                     continue f;
-                  }
-            }
-         });
-         var _p68 = _U.cmp(a,b) < 0 ? {ctor: "_Tuple2"
-                                      ,_0: a
-                                      ,_1: b} : {ctor: "_Tuple2",_0: b,_1: a};
-         var lo = _p68._0;
-         var hi = _p68._1;
-         var k = hi - lo + 1;
-         var n = A2(iLogBase,base,k);
-         var _p69 = A3(f,n,1,_p70.state);
-         var v = _p69._0;
-         var state$ = _p69._1;
-         return {ctor: "_Tuple2"
-                ,_0: lo + A2($Basics._op["%"],v,k)
-                ,_1: Seed(_U.update(_p70,{state: state$}))};
-      });
-   });
-   var $float = F2(function (a,b) {
-      return Generator(function (seed) {
-         var _p71 = A2(generate,A2($int,minInt,maxInt),seed);
-         var number = _p71._0;
-         var newSeed = _p71._1;
-         var negativeOneToOne = $Basics.toFloat(number) / $Basics.toFloat(maxInt - minInt);
-         var _p72 = _U.cmp(a,b) < 0 ? {ctor: "_Tuple2"
-                                      ,_0: a
-                                      ,_1: b} : {ctor: "_Tuple2",_0: b,_1: a};
-         var lo = _p72._0;
-         var hi = _p72._1;
-         var scaled = (lo + hi) / 2 + (hi - lo) * negativeOneToOne;
-         return {ctor: "_Tuple2",_0: scaled,_1: newSeed};
-      });
-   });
-   var bool = A2(map,
-   F2(function (x,y) {    return _U.eq(x,y);})(1),
-   A2($int,0,1));
-   return _elm.Random.values = {_op: _op
-                               ,bool: bool
-                               ,$int: $int
-                               ,$float: $float
-                               ,list: list
-                               ,pair: pair
-                               ,map: map
-                               ,map2: map2
-                               ,map3: map3
-                               ,map4: map4
-                               ,map5: map5
-                               ,andThen: andThen
-                               ,minInt: minInt
-                               ,maxInt: maxInt
-                               ,generate: generate
-                               ,initialSeed: initialSeed};
-};
-Elm.ListUtils = Elm.ListUtils || {};
-Elm.ListUtils.make = function (_elm) {
-   "use strict";
-   _elm.ListUtils = _elm.ListUtils || {};
-   if (_elm.ListUtils.values) return _elm.ListUtils.values;
+   _elm.GameList = _elm.GameList || {};
+   if (_elm.GameList.values) return _elm.GameList.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Random = Elm.Random.make(_elm),
-   $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
-   var _op = {};
-   var addToFront = F3(function (count,current,list) {
-      var tl = A2($Maybe.withDefault,_U.list([]),$List.tail(list));
-      var hd = A2($Maybe.withDefault,_U.list([]),$List.head(list));
-      return _U.cmp($List.length(hd),count) > -1 ? A2($List._op["::"],
-      _U.list([current]),
-      list) : A2($List._op["::"],A2($List._op["::"],current,hd),tl);
-   });
-   var divideInto = F2(function (list,numberOfSublists) {
-      var listLength = $List.length(list);
-      var targetSize = $List.length(list) / numberOfSublists | 0;
-      var listOfLists = A3($List.foldl,
-      addToFront(targetSize),
-      _U.list([]),
-      list);
-      var hasAdditionalElements = _U.cmp($List.length(listOfLists),
-      numberOfSublists) > 0;
-      if (hasAdditionalElements) {
-            var addAdditionals = F2(function (additional,list) {
-               var _p0 = additional;
-               if (_p0.ctor === "Just") {
-                     return A2($List._op["::"],_p0._0,list);
-                  } else {
-                     return list;
-                  }
-            });
-            var normalSublists = A2($Maybe.withDefault,
-            _U.list([]),
-            $List.tail(listOfLists));
-            var additionalElements = A2($Maybe.withDefault,
-            _U.list([]),
-            $List.head(listOfLists));
-            var numberOfAdditionalElements = $List.length(additionalElements);
-            var nothings = A2($List.repeat,
-            listLength - numberOfAdditionalElements,
-            $Maybe.Nothing);
-            var justs = A2($List.map,$Maybe.Just,additionalElements);
-            var additionals = A2($List.append,justs,nothings);
-            return A3($List.map2,addAdditionals,additionals,normalSublists);
-         } else return listOfLists;
-   });
-   var divide = F2(function (list,size) {
-      return A3($List.foldl,addToFront(size),_U.list([]),list);
-   });
-   var shuffle = F2(function (list,seed) {
-      var listLength = $List.length(list);
-      var randomListGenerator = A2($Random.list,
-      listLength,
-      A2($Random.$float,0,10));
-      var randomList = $Basics.fst(A2($Random.generate,
-      randomListGenerator,
-      seed));
-      var listOfPairs = A3($List.map2,
-      F2(function (v0,v1) {
-         return {ctor: "_Tuple2",_0: v0,_1: v1};
-      }),
-      randomList,
-      list);
-      var listOfSortedPairs = A2($List.sortBy,
-      $Basics.fst,
-      listOfPairs);
-      return A2($List.map,$Basics.snd,listOfSortedPairs);
-   });
-   return _elm.ListUtils.values = {_op: _op
-                                  ,shuffle: shuffle
-                                  ,divide: divide
-                                  ,divideInto: divideInto};
-};
-Elm.Games = Elm.Games || {};
-Elm.Games.make = function (_elm) {
-   "use strict";
-   _elm.Games = _elm.Games || {};
-   if (_elm.Games.values) return _elm.Games.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
-   $Globals = Elm.Globals.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Html$Attributes = Elm.Html.Attributes.make(_elm),
    $Html$Events = Elm.Html.Events.make(_elm),
@@ -11934,6 +11743,14 @@ Elm.Games.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
+   var playerRankListItem = F2(function (index,name) {
+      return A2($Html.li,
+      _U.list([$Html$Attributes.$class("collection-item")]),
+      _U.list([$Html.text(name)
+              ,A2($Html.span,
+              _U.list([$Html$Attributes.$class("badge")]),
+              _U.list([$Html.text($Basics.toString(index + 1))]))]));
+   });
    var playerListItem = function (player) {
       return A2($Html.li,
       _U.list([$Html$Attributes.$class("collection-item")]),
@@ -11941,11 +11758,11 @@ Elm.Games.make = function (_elm) {
    };
    var finishedGameCard = F2(function (address,game) {
       return A2($Html.div,
-      _U.list([$Html$Attributes.$class("card blue-grey")]),
+      _U.list([$Html$Attributes.$class("card blue-grey darken-1")]),
       _U.list([A2($Html.div,
-      _U.list([$Html$Attributes.$class("card-content black-text")]),
+      _U.list([$Html$Attributes.$class("card-content")]),
       _U.list([A2($Html.span,
-              _U.list([$Html$Attributes.$class("card-title black-text")]),
+              _U.list([$Html$Attributes.$class("card-title")]),
               _U.list([$Html.text(A2($Basics._op["++"],
               "Game ",
               $Basics.toString(game.id)))]))
@@ -11953,22 +11770,6 @@ Elm.Games.make = function (_elm) {
               _U.list([$Html$Attributes.$class("collection")]),
               A2($List.map,playerListItem,game.players))]))]));
    });
-   var updateGlobal = F2(function (action,model) {
-      var _p0 = action;
-      switch (_p0.ctor)
-      {case "AddPlayerGlobal": return _U.update(model,
-           {players: A2($List._op["::"],_p0._0,model.players)});
-         case "RemovePlayerGlobal": return _U.update(model,
-           {players: A2($List.filter,
-           function (str) {
-              return !_U.eq(str,_p0._0);
-           },
-           model.players)});
-         case "SetTimeGlobal": return _U.update(model,
-           {randomSeed: $Random.initialSeed($Basics.truncate(_p0._0))});
-         default: return model;}
-   });
-   var Global = function (a) {    return {ctor: "Global",_0: a};};
    var StopGame = function (a) {
       return {ctor: "StopGame",_0: a};
    };
@@ -11982,17 +11783,17 @@ Elm.Games.make = function (_elm) {
    });
    var runningGameCard = F2(function (address,game) {
       return A2($Html.div,
-      _U.list([$Html$Attributes.$class("card  pink darken-2")]),
+      _U.list([$Html$Attributes.$class("card  blue-grey lighten-3")]),
       _U.list([A2($Html.div,
-      _U.list([$Html$Attributes.$class("card-content")]),
+      _U.list([$Html$Attributes.$class("card-content black-text")]),
       _U.list([A2($Html.span,
-              _U.list([$Html$Attributes.$class("card-title")]),
+              _U.list([$Html$Attributes.$class("card-title black-text")]),
               _U.list([$Html.text(A2($Basics._op["++"],
               "Game ",
               $Basics.toString(game.id)))]))
               ,A2($Html.ul,
               _U.list([$Html$Attributes.$class("collection")]),
-              A2($List.map,playerListItem,game.players))
+              A2($List.indexedMap,playerRankListItem,game.players))
               ,A2(stopGameButton,address,game)]))]));
    });
    var StartGame = function (a) {
@@ -12008,7 +11809,7 @@ Elm.Games.make = function (_elm) {
    });
    var newGameCard = F2(function (address,game) {
       return A2($Html.div,
-      _U.list([$Html$Attributes.$class("card blue-grey lighten-5")]),
+      _U.list([$Html$Attributes.$class("card blue-grey lighten-5 animated slideInRight")]),
       _U.list([A2($Html.div,
       _U.list([$Html$Attributes.$class("card-content black-text")]),
       _U.list([A2($Html.span,
@@ -12021,51 +11822,38 @@ Elm.Games.make = function (_elm) {
               A2($List.map,playerListItem,game.players))
               ,A2(startGameButton,address,game)]))]));
    });
-   var gameCard = F2(function (address,game) {
-      var _p1 = game.state;
-      switch (_p1.ctor)
+   var view = F2(function (address,game) {
+      var _p0 = game.state;
+      switch (_p0.ctor)
       {case "New": return A2(newGameCard,address,game);
          case "Running": return A2(runningGameCard,address,game);
+         case "Finished": return A2(finishedGameCard,address,game);
          default: return A2(finishedGameCard,address,game);}
    });
-   var StartTournament = {ctor: "StartTournament"};
-   var startTournamentButton = F2(function (address,model) {
-      var startTournamentButtonClass = _U.cmp($List.length(model.players),
-      1) > 0 && $Basics.not(model.tournamentStarted) ? "" : "disabled";
-      return A2($Html.div,
-      _U.list([]),
-      _U.list([A2($Html.a,
-      _U.list([$Html$Attributes.$class(A2($Basics._op["++"],
-              "waves-effect waves-light btn ",
-              startTournamentButtonClass))
-              ,A2($Html$Events.onClick,address,StartTournament)]),
-      _U.list([model.tournamentStarted ? $Html.text("Tournament Started!") : $Html.text("Start Tournament")]))]));
-   });
-   var view = F2(function (address,model) {
-      var button = A2(startTournamentButton,address,model);
-      var games = A2($List.map,gameCard(address),model.games);
-      return A2($Html.div,
-      _U.list([]),
-      A2($List._op["::"],button,games));
-   });
-   var NoOp = {ctor: "NoOp"};
-   var minPlayersPerGame = 2;
-   var maxPlayersPerGame = 4;
-   var initialModel = {games: _U.list([])
-                      ,players: _U.list([])
-                      ,tournamentStarted: false
-                      ,randomSeed: $Random.initialSeed(4166884)};
-   var Model = F4(function (a,b,c,d) {
-      return {games: a
-             ,players: b
-             ,tournamentStarted: c
-             ,randomSeed: d};
-   });
+   var minPlayersPerModel = 2;
+   var maxPlayersPerModel = 4;
    var Game = F4(function (a,b,c,d) {
       return {places: a,state: b,players: c,id: d};
    });
+   var ResultsAdded = {ctor: "ResultsAdded"};
    var Finished = {ctor: "Finished"};
    var Running = {ctor: "Running"};
+   var update = F2(function (action,model) {
+      var _p1 = action;
+      if (_p1.ctor === "StartGame") {
+            var updater = function (game) {
+               return _U.eq(game.id,_p1._0) ? _U.update(game,
+               {state: Running}) : game;
+            };
+            return A2($List.map,updater,model);
+         } else {
+            var updater = function (game) {
+               return _U.eq(game.id,_p1._0) ? _U.update(game,
+               {state: Finished}) : game;
+            };
+            return A2($List.map,updater,model);
+         }
+   });
    var New = {ctor: "New"};
    var newGame = F2(function (id,players) {
       return {places: _U.list([])
@@ -12078,51 +11866,217 @@ Elm.Games.make = function (_elm) {
       var numberOfPlayers = $List.length(randomList);
       var canBeDevidedEvenly = _U.eq(A2($Basics._op["%"],
       numberOfPlayers,
-      maxPlayersPerGame),
+      maxPlayersPerModel),
       0);
-      var numberOfCompleteGames = numberOfPlayers / maxPlayersPerGame | 0;
-      var numberOfGames = canBeDevidedEvenly ? numberOfCompleteGames : numberOfCompleteGames + 1;
-      var numberOfPlayersPerGame = numberOfPlayers / numberOfGames | 0;
+      var numberOfCompleteModels = numberOfPlayers / maxPlayersPerModel | 0;
+      var numberOfModels = canBeDevidedEvenly ? numberOfCompleteModels : numberOfCompleteModels + 1;
+      var numberOfPlayersPerModel = numberOfPlayers / numberOfModels | 0;
       var listOfLists = A2($ListUtils.divideInto,
       randomList,
-      numberOfGames);
+      numberOfModels);
       return A2($List.indexedMap,newGame,listOfLists);
    });
-   var update = F2(function (action,model) {
-      var _p2 = action;
-      switch (_p2.ctor)
-      {case "NoOp": return {ctor: "_Tuple2"
-                           ,_0: model
-                           ,_1: $Globals.NoOpGlobal};
-         case "StartTournament": return {ctor: "_Tuple2"
-                                        ,_0: _U.update(model,
-                                        {tournamentStarted: true
-                                        ,games: A2(makeGames,model.players,model.randomSeed)})
-                                        ,_1: $Globals.StartTournamentGlobal};
-         case "StartGame": var updater = function (game) {
-              return _U.eq(game.id,_p2._0) ? _U.update(game,
-              {state: Running}) : game;
-           };
-           return {ctor: "_Tuple2"
-                  ,_0: _U.update(model,{games: A2($List.map,updater,model.games)})
-                  ,_1: $Globals.NoOpGlobal};
-         case "StopGame": var updater = function (game) {
-              return _U.eq(game.id,_p2._0) ? _U.update(game,
-              {state: Finished}) : game;
-           };
-           return {ctor: "_Tuple2"
-                  ,_0: _U.update(model,{games: A2($List.map,updater,model.games)})
-                  ,_1: $Globals.NoOpGlobal};
-         default: return {ctor: "_Tuple2"
-                         ,_0: A2(updateGlobal,_p2._0,model)
-                         ,_1: $Globals.NoOpGlobal};}
+   return _elm.GameList.values = {_op: _op
+                                 ,makeGames: makeGames
+                                 ,update: update
+                                 ,view: view};
+};
+Elm.Native.Time = {};
+
+Elm.Native.Time.make = function(localRuntime)
+{
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Time = localRuntime.Native.Time || {};
+	if (localRuntime.Native.Time.values)
+	{
+		return localRuntime.Native.Time.values;
+	}
+
+	var NS = Elm.Native.Signal.make(localRuntime);
+	var Maybe = Elm.Maybe.make(localRuntime);
+
+
+	// FRAMES PER SECOND
+
+	function fpsWhen(desiredFPS, isOn)
+	{
+		var msPerFrame = 1000 / desiredFPS;
+		var ticker = NS.input('fps-' + desiredFPS, null);
+
+		function notifyTicker()
+		{
+			localRuntime.notify(ticker.id, null);
+		}
+
+		function firstArg(x, y)
+		{
+			return x;
+		}
+
+		// input fires either when isOn changes, or when ticker fires.
+		// Its value is a tuple with the current timestamp, and the state of isOn
+		var input = NS.timestamp(A3(NS.map2, F2(firstArg), NS.dropRepeats(isOn), ticker));
+
+		var initialState = {
+			isOn: false,
+			time: localRuntime.timer.programStart,
+			delta: 0
+		};
+
+		var timeoutId;
+
+		function update(input, state)
+		{
+			var currentTime = input._0;
+			var isOn = input._1;
+			var wasOn = state.isOn;
+			var previousTime = state.time;
+
+			if (isOn)
+			{
+				timeoutId = localRuntime.setTimeout(notifyTicker, msPerFrame);
+			}
+			else if (wasOn)
+			{
+				clearTimeout(timeoutId);
+			}
+
+			return {
+				isOn: isOn,
+				time: currentTime,
+				delta: (isOn && !wasOn) ? 0 : currentTime - previousTime
+			};
+		}
+
+		return A2(
+			NS.map,
+			function(state) { return state.delta; },
+			A3(NS.foldp, F2(update), update(input.value, initialState), input)
+		);
+	}
+
+
+	// EVERY
+
+	function every(t)
+	{
+		var ticker = NS.input('every-' + t, null);
+		function tellTime()
+		{
+			localRuntime.notify(ticker.id, null);
+		}
+		var clock = A2(NS.map, fst, NS.timestamp(ticker));
+		setInterval(tellTime, t);
+		return clock;
+	}
+
+
+	function fst(pair)
+	{
+		return pair._0;
+	}
+
+
+	function read(s)
+	{
+		var t = Date.parse(s);
+		return isNaN(t) ? Maybe.Nothing : Maybe.Just(t);
+	}
+
+	return localRuntime.Native.Time.values = {
+		fpsWhen: F2(fpsWhen),
+		every: every,
+		toDate: function(t) { return new Date(t); },
+		read: read
+	};
+};
+
+Elm.Time = Elm.Time || {};
+Elm.Time.make = function (_elm) {
+   "use strict";
+   _elm.Time = _elm.Time || {};
+   if (_elm.Time.values) return _elm.Time.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Native$Signal = Elm.Native.Signal.make(_elm),
+   $Native$Time = Elm.Native.Time.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var delay = $Native$Signal.delay;
+   var since = F2(function (time,signal) {
+      var stop = A2($Signal.map,
+      $Basics.always(-1),
+      A2(delay,time,signal));
+      var start = A2($Signal.map,$Basics.always(1),signal);
+      var delaydiff = A3($Signal.foldp,
+      F2(function (x,y) {    return x + y;}),
+      0,
+      A2($Signal.merge,start,stop));
+      return A2($Signal.map,
+      F2(function (x,y) {    return !_U.eq(x,y);})(0),
+      delaydiff);
    });
-   return _elm.Games.values = {_op: _op
-                              ,initialModel: initialModel
-                              ,update: update
-                              ,updateGlobal: updateGlobal
-                              ,view: view
-                              ,Model: Model};
+   var timestamp = $Native$Signal.timestamp;
+   var every = $Native$Time.every;
+   var fpsWhen = $Native$Time.fpsWhen;
+   var fps = function (targetFrames) {
+      return A2(fpsWhen,targetFrames,$Signal.constant(true));
+   };
+   var inMilliseconds = function (t) {    return t;};
+   var millisecond = 1;
+   var second = 1000 * millisecond;
+   var minute = 60 * second;
+   var hour = 60 * minute;
+   var inHours = function (t) {    return t / hour;};
+   var inMinutes = function (t) {    return t / minute;};
+   var inSeconds = function (t) {    return t / second;};
+   return _elm.Time.values = {_op: _op
+                             ,millisecond: millisecond
+                             ,second: second
+                             ,minute: minute
+                             ,hour: hour
+                             ,inMilliseconds: inMilliseconds
+                             ,inSeconds: inSeconds
+                             ,inMinutes: inMinutes
+                             ,inHours: inHours
+                             ,fps: fps
+                             ,fpsWhen: fpsWhen
+                             ,every: every
+                             ,timestamp: timestamp
+                             ,delay: delay
+                             ,since: since};
+};
+Elm.Globals = Elm.Globals || {};
+Elm.Globals.make = function (_elm) {
+   "use strict";
+   _elm.Globals = _elm.Globals || {};
+   if (_elm.Globals.values) return _elm.Globals.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Time = Elm.Time.make(_elm);
+   var _op = {};
+   var SetTimeGlobal = function (a) {
+      return {ctor: "SetTimeGlobal",_0: a};
+   };
+   var StartTournamentGlobal = {ctor: "StartTournamentGlobal"};
+   var RemovePlayerGlobal = function (a) {
+      return {ctor: "RemovePlayerGlobal",_0: a};
+   };
+   var AddPlayerGlobal = function (a) {
+      return {ctor: "AddPlayerGlobal",_0: a};
+   };
+   var NoOpGlobal = {ctor: "NoOpGlobal"};
+   return _elm.Globals.values = {_op: _op
+                                ,NoOpGlobal: NoOpGlobal
+                                ,AddPlayerGlobal: AddPlayerGlobal
+                                ,RemovePlayerGlobal: RemovePlayerGlobal
+                                ,StartTournamentGlobal: StartTournamentGlobal
+                                ,SetTimeGlobal: SetTimeGlobal};
 };
 Elm.PlayerList = Elm.PlayerList || {};
 Elm.PlayerList.make = function (_elm) {
@@ -12169,7 +12123,9 @@ Elm.PlayerList.make = function (_elm) {
          return model.isValidPlayerName ? {ctor: "_Tuple2"
                                           ,_0: _U.update(model,
                                           {newPlayer: ""
-                                          ,players: A2($List._op["::"],model.newPlayer,model.players)
+                                          ,players: A2($List.append,
+                                          model.players,
+                                          _U.list([model.newPlayer]))
                                           ,isValidPlayerName: false
                                           ,showErrorInTextField: false})
                                           ,_1: $Globals.AddPlayerGlobal(model.newPlayer)} : {ctor: "_Tuple2"
@@ -12243,9 +12199,16 @@ Elm.PlayerList.make = function (_elm) {
       _U.list([A2($Html.h5,
       _U.list([]),
       _U.list([$Html.text("Players")]))]));
-      var listItem = function (str) {
+      var numberOfPlayers = $List.length(model.players);
+      var animationClass = function (index) {
+         return _U.eq(index,
+         numberOfPlayers - 1) ? "animated slideInLeft" : "";
+      };
+      var listItem = F2(function (index,str) {
          return A2($Html.li,
-         _U.list([$Html$Attributes.$class("collection-item")]),
+         _U.list([$Html$Attributes.$class(A2($Basics._op["++"],
+         "collection-item ",
+         animationClass(index)))]),
          _U.list([A2($Html.div,
          _U.list([]),
          _U.list([$Html.text(str)
@@ -12258,8 +12221,8 @@ Elm.PlayerList.make = function (_elm) {
                  _U.list([A2($Html.i,
                  _U.list([$Html$Attributes.$class("material-icons")]),
                  _U.list([$Html.text("delete")]))])) : $Html.text("")]))]));
-      };
-      var list = A2($List.map,listItem,model.players);
+      });
+      var list = A2($List.indexedMap,listItem,model.players);
       var listWithHeaderAndFooter = model.tournamentStarted ? A2($List.append,
       A2($List._op["::"],listHeader,list),
       _U.list([A2(addPlayerView,
@@ -12291,6 +12254,102 @@ Elm.PlayerList.make = function (_elm) {
                                    ,Model: Model
                                    ,Global: Global};
 };
+Elm.Tournament = Elm.Tournament || {};
+Elm.Tournament.make = function (_elm) {
+   "use strict";
+   _elm.Tournament = _elm.Tournament || {};
+   if (_elm.Tournament.values) return _elm.Tournament.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $GameList = Elm.GameList.make(_elm),
+   $Globals = Elm.Globals.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $Html$Events = Elm.Html.Events.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Random = Elm.Random.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var updateGlobal = F2(function (action,model) {
+      var _p0 = action;
+      switch (_p0.ctor)
+      {case "AddPlayerGlobal": return _U.update(model,
+           {players: A2($List._op["::"],_p0._0,model.players)});
+         case "RemovePlayerGlobal": return _U.update(model,
+           {players: A2($List.filter,
+           function (str) {
+              return !_U.eq(str,_p0._0);
+           },
+           model.players)});
+         case "SetTimeGlobal": return _U.update(model,
+           {randomSeed: $Random.initialSeed($Basics.truncate(_p0._0))});
+         default: return model;}
+   });
+   var update = F2(function (action,model) {
+      var _p1 = action;
+      switch (_p1.ctor)
+      {case "NoOp": return {ctor: "_Tuple2"
+                           ,_0: model
+                           ,_1: $Globals.NoOpGlobal};
+         case "StartTournament": return {ctor: "_Tuple2"
+                                        ,_0: _U.update(model,
+                                        {tournamentStarted: true
+                                        ,games: A2($GameList.makeGames,model.players,model.randomSeed)})
+                                        ,_1: $Globals.StartTournamentGlobal};
+         case "Game": return {ctor: "_Tuple2"
+                             ,_0: _U.update(model,
+                             {games: A2($GameList.update,_p1._0,model.games)})
+                             ,_1: $Globals.NoOpGlobal};
+         default: return {ctor: "_Tuple2"
+                         ,_0: A2(updateGlobal,_p1._0,model)
+                         ,_1: $Globals.NoOpGlobal};}
+   });
+   var Global = function (a) {    return {ctor: "Global",_0: a};};
+   var Game = function (a) {    return {ctor: "Game",_0: a};};
+   var StartTournament = {ctor: "StartTournament"};
+   var startTournamentButton = F2(function (address,model) {
+      var startTournamentButtonClass = _U.cmp($List.length(model.players),
+      1) > 0 && $Basics.not(model.tournamentStarted) ? "" : "disabled";
+      return A2($Html.div,
+      _U.list([]),
+      _U.list([A2($Html.a,
+      _U.list([$Html$Attributes.$class(A2($Basics._op["++"],
+              "waves-effect waves-light btn ",
+              startTournamentButtonClass))
+              ,A2($Html$Events.onClick,address,StartTournament)]),
+      _U.list([model.tournamentStarted ? $Html.text("Tournament Started!") : $Html.text("Start Tournament")]))]));
+   });
+   var view = F2(function (address,model) {
+      var button = A2(startTournamentButton,address,model);
+      var gameAddress = A2($Signal.forwardTo,address,Game);
+      var games = A2($List.map,
+      $GameList.view(gameAddress),
+      model.games);
+      return A2($Html.div,
+      _U.list([]),
+      A2($List._op["::"],button,games));
+   });
+   var NoOp = {ctor: "NoOp"};
+   var initialModel = {games: _U.list([])
+                      ,players: _U.list([])
+                      ,tournamentStarted: false
+                      ,randomSeed: $Random.initialSeed(4166884)};
+   var Model = F4(function (a,b,c,d) {
+      return {games: a
+             ,players: b
+             ,tournamentStarted: c
+             ,randomSeed: d};
+   });
+   return _elm.Tournament.values = {_op: _op
+                                   ,initialModel: initialModel
+                                   ,update: update
+                                   ,updateGlobal: updateGlobal
+                                   ,view: view
+                                   ,Model: Model};
+};
 Elm.MushroomCup = Elm.MushroomCup || {};
 Elm.MushroomCup.make = function (_elm) {
    "use strict";
@@ -12299,7 +12358,6 @@ Elm.MushroomCup.make = function (_elm) {
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
-   $Games = Elm.Games.make(_elm),
    $Globals = Elm.Globals.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Html$Attributes = Elm.Html.Attributes.make(_elm),
@@ -12308,7 +12366,8 @@ Elm.MushroomCup.make = function (_elm) {
    $PlayerList = Elm.PlayerList.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
-   $Time = Elm.Time.make(_elm);
+   $Time = Elm.Time.make(_elm),
+   $Tournament = Elm.Tournament.make(_elm);
    var _op = {};
    var header = A2($Html.div,
    _U.list([$Html$Attributes.$class("row")]),
@@ -12319,7 +12378,7 @@ Elm.MushroomCup.make = function (_elm) {
    _U.list([$Html.text("Mushroom Cup")]))]))]));
    var updateGlobal = F2(function (action,model) {
       return _U.update(model,
-      {games: A2($Games.updateGlobal,action,model.games)
+      {games: A2($Tournament.updateGlobal,action,model.games)
       ,playerList: A2($PlayerList.updateGlobal,
       action,
       model.playerList)});
@@ -12335,7 +12394,9 @@ Elm.MushroomCup.make = function (_elm) {
            var globalAction = _p1._1;
            var newModel = A2(updateGlobal,globalAction,model);
            return _U.update(newModel,{playerList: players});
-         case "Games": var _p2 = A2($Games.update,_p0._0,model.games);
+         case "GameList": var _p2 = A2($Tournament.update,
+           _p0._0,
+           model.games);
            var games = _p2._0;
            var globalAction = _p2._1;
            var newModel = A2(updateGlobal,globalAction,model);
@@ -12343,7 +12404,9 @@ Elm.MushroomCup.make = function (_elm) {
          default: return A2(updateGlobal,_p0._0,model);}
    });
    var Global = function (a) {    return {ctor: "Global",_0: a};};
-   var Games = function (a) {    return {ctor: "Games",_0: a};};
+   var GameList = function (a) {
+      return {ctor: "GameList",_0: a};
+   };
    var PlayerList = function (a) {
       return {ctor: "PlayerList",_0: a};
    };
@@ -12360,8 +12423,8 @@ Elm.MushroomCup.make = function (_elm) {
                       model.playerList)]))
                       ,A2($Html.div,
                       _U.list([$Html$Attributes.$class("col s8")]),
-                      _U.list([A2($Games.view,
-                      A2($Signal.forwardTo,address,Games),
+                      _U.list([A2($Tournament.view,
+                      A2($Signal.forwardTo,address,GameList),
                       model.games)]))]))
               ,A2($Html.div,
               _U.list([$Html$Attributes.$class("row")]),
@@ -12406,7 +12469,7 @@ Elm.MushroomCup.make = function (_elm) {
    $Time.every($Time.second));
    var allSignals = A2($Signal.merge,actions.signal,ticker);
    var initialModel = {playerList: $PlayerList.initialModel
-                      ,games: $Games.initialModel};
+                      ,games: $Tournament.initialModel};
    var model = A3($Signal.foldp,update,initialModel,allSignals);
    var main = A2($Signal.map,view(actions.address),model);
    var Model = F2(function (a,b) {
@@ -12420,7 +12483,7 @@ Elm.MushroomCup.make = function (_elm) {
                                     ,model: model
                                     ,NoOp: NoOp
                                     ,PlayerList: PlayerList
-                                    ,Games: Games
+                                    ,GameList: GameList
                                     ,Global: Global
                                     ,actions: actions
                                     ,update: update
