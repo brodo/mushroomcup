@@ -123,7 +123,7 @@ header =
   ]
 
 
--- Ports
+-- Ports and mailboxes
 
 
 port focus : Signal String
@@ -145,6 +145,7 @@ port focus =
       Signal.filter filter NoOp actions.signal
   in
     Signal.map selector filteredActions
+
 
 
 -- Main
