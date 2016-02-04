@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
-    "summary": "helpful summary of your project, less than 80 characters",
-    "repository": "https://github.com/USER/PROJECT.git",
+    "summary": "A Maricart tournament app",
+    "repository": "https://github.com/brodo/mushroomcup.git",
     "license": "BSD3",
     "source-directories": [
         "."
