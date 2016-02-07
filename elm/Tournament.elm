@@ -4,7 +4,7 @@ import Globals exposing
     (AddPlayerGlobal, RemovePlayerGlobal, NoOpGlobal, StartTournamentGlobal,
     SetTimeGlobal)
   )
-import GameList
+import Round
 import Html exposing (..)
 import Html.Attributes exposing (class)
 import Html.Events exposing (..)
@@ -12,21 +12,20 @@ import Random
 
 
 type alias Model =
-  { games : GameList.Model
+  { rounds : List Round.Model
   , players : List String
   , tournamentStarted : Bool
-  , randomSeed: Random.Seed
+  , randomSeed : Random.Seed
   }
 
 
 initialModel : Model
 initialModel =
-  { games = []
+  { rounds = []
   , players = []
   , tournamentStarted = False
   , randomSeed = Random.initialSeed 4166884
   }
-
 
 
 -- Actions
@@ -35,7 +34,7 @@ initialModel =
 type Action
   = NoOp
   | StartTournament
-  | Game GameList.Action
+  | Game Round.Action
   | Global Globals.GlobalAction
 
 
@@ -51,14 +50,17 @@ update action model =
     NoOp ->
       (model, NoOpGlobal)
     StartTournament ->
-      ( { model |
-         tournamentStarted = True
-         , games = (GameList.makeGames model.players model.randomSeed)
-        }
-        , StartTournamentGlobal)
+      let
+        games = Round.makeGames model.players model.randomSeed
+      in
+        ( { model |
+           tournamentStarted = True
+           , rounds = [Round.newRound games 1]
+          }
+          , StartTournamentGlobal)
     Game act ->
       ( { model |
-          games = GameList.update act model.games
+          rounds = List.map (Round.update act) model.rounds
          }
          , NoOpGlobal)
     Global act ->
@@ -93,10 +95,11 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   let
     gameAddress = (Signal.forwardTo address Game)
-    games = List.map (GameList.view gameAddress) model.games
+    rounds = List.map (Round.view gameAddress) model.rounds
     button = startTournamentButton address model
   in
-    div [] (button :: games)
+    div [] (button :: rounds)
+
 
 
 startTournamentButton : Signal.Address Action -> Model -> Html

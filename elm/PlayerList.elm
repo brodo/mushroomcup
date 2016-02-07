@@ -138,7 +138,6 @@ view address model =
 
 
 
-
 addPlayerView : Signal.Address Action -> Model -> Html
 addPlayerView address model =
   let

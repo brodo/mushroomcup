@@ -15,13 +15,20 @@ import Html.Attributes exposing (..)
 type alias Model =
   { playerList : PlayerList.Model
   , games : Tournament.Model
+  , currentPage : Pages
   }
+
+
+type Pages =
+  Settings
+  | Main
 
 
 initialModel : Model
 initialModel =
   { playerList = PlayerList.initialModel
   , games = Tournament.initialModel
+  , currentPage = Main
   }
 
 
@@ -96,9 +103,13 @@ updateGlobal action model =
 view : Signal.Address Action -> Model -> Html
 view address model =
   div [class "container"]
+  (header :: (mainView address model))
+
+
+mainView : Signal.Address Action -> Model -> List Html
+mainView address model =
   [
-    header
-    , div [class "row"]
+    div [class "row"]
       [ div [class "col s4"]
         [(PlayerList.view (Signal.forwardTo address PlayerList) model.playerList)]
       , div [class "col s8"]
@@ -110,7 +121,7 @@ view address model =
         , text <| toString model
         ]
       ]
-  ]
+    ]
 
 
 header : Html
@@ -121,6 +132,7 @@ header =
       [h1 [] [text "Mushroom Cup"]
       ]
   ]
+
 
 
 -- Ports and mailboxes
@@ -145,7 +157,6 @@ port focus =
       Signal.filter filter NoOp actions.signal
   in
     Signal.map selector filteredActions
-
 
 
 -- Main

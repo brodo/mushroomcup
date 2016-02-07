@@ -1,11 +1,10 @@
-module GameList (makeGames, update, view, Action, Model) where
+module Round (makeGames, newRound, update, view, Action, Model) where
 import Random
 import ListUtils
 import List.Extra
 import Html exposing (..)
 import Html.Attributes exposing (class)
 import Html.Events exposing (..)
-
 
 
 -- Model
@@ -15,19 +14,26 @@ type alias GameId = Int
 type alias PlayerName  = String
 
 
-type ModelState
+type GameState
   = New
   | Running
   | Finished
   | ResultsAdded
 
+type RoundState
+  = RunningRound
+  | FinishedRound
 
-type alias Model = List Game
+type alias Model =
+  { games : List Game
+  , id : Int
+  , state : RoundState
+  }
 
 
 type alias Game =
   { places : List (Int, String)
-  , state : ModelState
+  , state : GameState
   , players : List String
   , id : GameId
   }
@@ -41,6 +47,12 @@ newGame id players =
   , id = id + 1
   }
 
+newRound : List Game -> Int -> Model
+newRound games id=
+  { games = games
+  , id = id
+  , state = RunningRound
+  }
 
 maxPlayersPerModel : Int
 maxPlayersPerModel =
@@ -75,7 +87,9 @@ update action model =
               else
                 game
         in
-          List.map updater model
+          { model |
+            games = List.map updater model.games
+          }
     StopGame id ->
       let
         updater game =
@@ -83,15 +97,24 @@ update action model =
             then { game | state = Finished}
             else game
       in
-        List.map updater model
+        { model |
+          games = List.map updater model.games
+        }
     PlacementsReady id ->
       let
         updater game =
           if game.id == id
             then { game | state = ResultsAdded}
             else game
+        newGames = List.map updater model.games
+        newState = if List.all (\g -> g.state == ResultsAdded) newGames
+          then FinishedRound
+          else RunningRound
       in
-        List.map updater model
+        { model |
+          games = newGames
+        , state = newState
+        }
     MoveUp name ->
       let
         updatePlaces place (i,n) =
@@ -126,14 +149,15 @@ placeUpdater name model updater =
         List.Extra.find (\(_,n) -> n == name) game.places
     newGame = { game | places = List.map (updater place) game.places }
   in
-    List.map (\g-> if g.id == game.id then newGame else g) model
-
+    { model |
+      games = List.map (\g-> if g.id == game.id then newGame else g) model.games
+    }
 
 
 gameForPlayer : String -> Model -> Game
 gameForPlayer playerName model =
   let
-    game = List.head <| List.filter (\g -> List.member playerName g.players) model
+    game = List.head <| List.filter (\g -> List.member playerName g.players) model.games
   in
     Maybe.withDefault (newGame 0 []) game
 
@@ -156,9 +180,24 @@ makeGames players seed =
 
 -- View
 
+view : Signal.Address Action -> Model -> Html
+view address round =
+  let
+    gameviews = List.map (gameView address) round.games
+    finisedStr = if round.state == FinishedRound
+      then " (finished)"
+      else " (running)"
+  in
+    div [class "round"]
+    [
+      h5 [] [text ("Round " ++ (toString round.id) ++ finisedStr)]
+    ,  div [class "games"] gameviews
+    ,  hr [][]
+    ]
 
-view : Signal.Address Action -> Game -> Html
-view address game =
+
+gameView : Signal.Address Action -> Game -> Html
+gameView address game =
   case game.state of
     New ->
       newGameCard address game
@@ -185,6 +224,7 @@ playerRankListItem index name  =
           text name
         ]
       ]
+
 
 finishedPlayerRankListItem : Signal.Address Action -> Int -> Int -> String -> Html
 finishedPlayerRankListItem address playerCount index name  =
@@ -258,6 +298,7 @@ finishedGameCard address game =
         ]
       ]
 
+
 resultsGameCard : Signal.Address Action -> Game -> Html
 resultsGameCard address game =
   let
@@ -292,6 +333,7 @@ stopGameButton address game =
       , onClick address (StopGame game.id)
       ] [text "Stop Game"]
   ]
+
 
 placesReadyButton : Signal.Address Action -> Game -> Html
 placesReadyButton address game =
