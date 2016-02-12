@@ -1,10 +1,16 @@
-module Round (makeGames, newRound, update, view, Action, Model) where
+module Round
+  (makeGames, newRound, update, updateGlobal, view, Action, Model)
+  where
 import Random
 import ListUtils
 import List.Extra
 import Html exposing (..)
 import Html.Attributes exposing (class)
 import Html.Events exposing (..)
+import Settings
+import Random
+import Globals exposing (GlobalAction(StartTournamentGlobal, RoundFinishedGlobal, NoOpGlobal))
+
 
 
 -- Model
@@ -20,14 +26,20 @@ type GameState
   | Finished
   | ResultsAdded
 
+
 type RoundState
   = RunningRound
   | FinishedRound
+  | SetupRound
+
 
 type alias Model =
   { games : List Game
   , id : Int
   , state : RoundState
+  , settings : Settings.Model
+  , players : List String
+  , randomSeed : Random.Seed
   }
 
 
@@ -47,22 +59,19 @@ newGame id players =
   , id = id + 1
   }
 
-newRound : List Game -> Int -> Model
-newRound games id=
+newRound : List Game -> List String -> Int -> Random.Seed -> Model
+newRound games players id seed=
   { games = games
   , id = id
-  , state = RunningRound
+  , state = SetupRound
+  , settings = Settings.initialModel
+  , players = players
+  , randomSeed = seed
   }
 
-maxPlayersPerModel : Int
-maxPlayersPerModel =
-  4
-
-minPlayersPerModel : Int
-minPlayersPerModel =
-  2
 
 -- Actions
+
 
 type Action
   = StartGame GameId
@@ -70,26 +79,36 @@ type Action
   | MoveUp PlayerName
   | MoveDown PlayerName
   | PlacementsReady GameId
+  | StartRound
+  | Global Globals.GlobalAction
+  | Settings Settings.Action
+
 
 -- Update
 
-update : Action -> Model -> Model
+
+update : Action -> Model -> (Model, Globals.GlobalAction)
 update action model =
   case action of
+    Global act ->
+      (updateGlobal act model, NoOpGlobal)
     StartGame id ->
-        let
-          updater game =
-            if game.id == id then
-                { game |
-                  state = Running
-                , places = List.indexedMap (,) game.players
-                }
-              else
-                game
-        in
+      let
+        updater game =
+          if game.id == id then
+              { game |
+                state = Running
+              , places = List.indexedMap (,) game.players
+              }
+            else
+              game
+      in
+        (
           { model |
             games = List.map updater model.games
           }
+          , NoOpGlobal
+        )
     StopGame id ->
       let
         updater game =
@@ -97,9 +116,12 @@ update action model =
             then { game | state = Finished}
             else game
       in
-        { model |
-          games = List.map updater model.games
-        }
+        (
+          { model |
+            games = List.map updater model.games
+          },
+          NoOpGlobal
+        )
     PlacementsReady id ->
       let
         updater game =
@@ -111,10 +133,13 @@ update action model =
           then FinishedRound
           else RunningRound
       in
-        { model |
-          games = newGames
-        , state = newState
-        }
+        (
+          { model |
+            games = newGames
+          , state = newState
+          }
+          , if newState == FinishedRound then RoundFinishedGlobal else NoOpGlobal
+        )
     MoveUp name ->
       let
         updatePlaces place (i,n) =
@@ -125,7 +150,7 @@ update action model =
           else
             (i,n)
       in
-        placeUpdater name model updatePlaces
+        (placeUpdater name model updatePlaces, NoOpGlobal)
     MoveDown name ->
       let
         updatePlaces place (i, n) =
@@ -136,7 +161,30 @@ update action model =
           else
             (i,n)
       in
-        placeUpdater name model updatePlaces
+        (placeUpdater name model updatePlaces, NoOpGlobal)
+    StartRound ->
+      (
+        { model |
+          games = makeGames model
+        , state = RunningRound
+        }
+        , NoOpGlobal
+      )
+    Settings act ->
+      (
+        { model |
+          settings = Settings.update act model.settings
+        }
+        , NoOpGlobal
+      )
+
+
+-- React to global updates
+updateGlobal : Globals.GlobalAction -> Model -> Model
+updateGlobal action model =
+  case action of
+    _ ->
+      model
 
 
 
@@ -161,13 +209,14 @@ gameForPlayer playerName model =
   in
     Maybe.withDefault (newGame 0 []) game
 
-makeGames : List String -> Random.Seed -> List Game
-makeGames players seed =
+
+makeGames : Model -> List Game
+makeGames model =
   let
-    randomList = ListUtils.shuffle players seed
+    randomList = ListUtils.shuffle model.players model.randomSeed
     numberOfPlayers = List.length randomList
-    canBeDevidedEvenly = (numberOfPlayers % maxPlayersPerModel) == 0
-    numberOfCompleteModels = numberOfPlayers // maxPlayersPerModel
+    canBeDevidedEvenly = (numberOfPlayers % model.settings.playersPerGame) == 0
+    numberOfCompleteModels = numberOfPlayers // model.settings.playersPerGame
     numberOfModels =
       if canBeDevidedEvenly
       then numberOfCompleteModels
@@ -180,20 +229,36 @@ makeGames players seed =
 
 -- View
 
+
 view : Signal.Address Action -> Model -> Html
 view address round =
   let
+    settingsAddress = (Signal.forwardTo address Settings)
     gameviews = List.map (gameView address) round.games
+    settingsView = Settings.view settingsAddress round.settings
+    setupView = div []
+      [ settingsView
+      , a
+        [ class "waves-effect waves-light btn"
+        , onClick address StartRound
+        ]
+        [ text "Start round" ]
+      ]
+
+
     finisedStr = if round.state == FinishedRound
       then " (finished)"
       else " (running)"
   in
     div [class "round"]
-    [
-      h5 [] [text ("Round " ++ (toString round.id) ++ finisedStr)]
-    ,  div [class "games"] gameviews
-    ,  hr [][]
+    [ h5 [] [text ("Round " ++ (toString round.id) ++ finisedStr)]
+    , if round.state == SetupRound
+      then setupView
+      else div [class "games"] gameviews
+    , hr [][]
     ]
+
+
 
 
 gameView : Signal.Address Action -> Game -> Html

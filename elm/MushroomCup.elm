@@ -14,7 +14,7 @@ import Html.Attributes exposing (..)
 
 type alias Model =
   { playerList : PlayerList.Model
-  , games : Tournament.Model
+  , tournament : Tournament.Model
   , currentPage : Pages
   }
 
@@ -27,7 +27,7 @@ type Pages =
 initialModel : Model
 initialModel =
   { playerList = PlayerList.initialModel
-  , games = Tournament.initialModel
+  , tournament = Tournament.initialModel
   , currentPage = Main
   }
 
@@ -36,8 +36,10 @@ ticker : Signal Action
 ticker =
   Signal.map (Global << Globals.SetTimeGlobal) (Time.every Time.second)
 
+
 allSignals : Signal Action
 allSignals = Signal.merge actions.signal ticker
+
 
 model : Signal Model
 model =
@@ -50,7 +52,7 @@ model =
 type Action =
   NoOp
   | PlayerList PlayerList.Action
-  | GameList Tournament.Action
+  | Tournament Tournament.Action
   | Global Globals.GlobalAction
 
 
@@ -76,14 +78,14 @@ update action model =
         { newModel |
           playerList = players
         }
-    GameList act ->
+    Tournament act ->
       let
-        (games, globalAction) =
-          Tournament.update act model.games
+        (tournament, globalAction) =
+          Tournament.update act model.tournament
         newModel = updateGlobal globalAction model
       in
         { newModel |
-          games = games
+          tournament = tournament
         }
     Global act ->
       updateGlobal act model
@@ -92,7 +94,7 @@ update action model =
 updateGlobal : Globals.GlobalAction -> Model -> Model
 updateGlobal action model =
     { model |
-      games = Tournament.updateGlobal action model.games
+      tournament = Tournament.updateGlobal action model.tournament
     , playerList = PlayerList.updateGlobal action model.playerList
     }
 
@@ -113,7 +115,7 @@ mainView address model =
       [ div [class "col s4"]
         [(PlayerList.view (Signal.forwardTo address PlayerList) model.playerList)]
       , div [class "col s8"]
-        [(Tournament.view (Signal.forwardTo address GameList) model.games)]
+        [(Tournament.view (Signal.forwardTo address Tournament) model.tournament)]
       ]
     , div [class "row"]
       [ div [class "col s12"]

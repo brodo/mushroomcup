@@ -2,7 +2,7 @@ module Tournament (Model, Action, initialModel, update, updateGlobal, view) wher
 import Globals exposing
   (GlobalAction
     (AddPlayerGlobal, RemovePlayerGlobal, NoOpGlobal, StartTournamentGlobal,
-    SetTimeGlobal)
+    SetTimeGlobal,RoundFinishedGlobal)
   )
 import Round
 import Html exposing (..)
@@ -50,19 +50,36 @@ update action model =
     NoOp ->
       (model, NoOpGlobal)
     StartTournament ->
-      let
-        games = Round.makeGames model.players model.randomSeed
-      in
         ( { model |
-           tournamentStarted = True
-           , rounds = [Round.newRound games 1]
-          }
-          , StartTournamentGlobal)
+            tournamentStarted = True
+          , rounds = [Round.newRound [] model.players 0 model.randomSeed]
+          } , StartTournamentGlobal)
     Game act ->
+      let
+        roundsAndActions = List.map (Round.update act) model.rounds
+        combineActions (_, globalAction) acc =
+          if (globalAction == RoundFinishedGlobal) || (globalAction == RoundFinishedGlobal)
+            then RoundFinishedGlobal
+            else NoOpGlobal
+        action = List.foldl combineActions NoOpGlobal roundsAndActions
+        newRoundId = List.length model.rounds
+        rounds = List.map fst roundsAndActions
+
+
+        newRounds =
+          if action == RoundFinishedGlobal
+            then
+              let
+                newRound = Round.newRound [] model.players newRoundId model.randomSeed
+              in
+                newRound :: rounds
+            else
+              rounds
+      in
       ( { model |
-          rounds = List.map (Round.update act) model.rounds
+          rounds = newRounds
          }
-         , NoOpGlobal)
+         , action)
     Global act ->
       ( updateGlobal act model, NoOpGlobal)
 
@@ -83,7 +100,6 @@ updateGlobal action model =
       { model |
         randomSeed = Random.initialSeed <| truncate time
       }
-
     _ ->
       model
 
